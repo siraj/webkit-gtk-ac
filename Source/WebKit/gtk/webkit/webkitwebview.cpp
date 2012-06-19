@@ -80,6 +80,7 @@
 #include "ProgressTracker.h"
 #include "RenderView.h"
 #include "ResourceHandle.h"
+#include "RuntimeEnabledFeatures.h"
 #include "ScriptValue.h"
 #include "Settings.h"
 #include "webkit/WebKitDOMDocumentPrivate.h"
@@ -120,6 +121,14 @@
 
 #if ENABLE(REGISTER_PROTOCOL_HANDLER)
 #include "RegisterProtocolHandlerClientGtk.h"
+#endif
+
+#if ENABLE(MEDIA_STREAM)
+#include "MediaStreamSource.h"
+#include "UserMediaClientGtk.h"
+#include "webkitwebusermedialist.h"
+#include "webkitwebusermedialistprivate.h"
+#include "webkitwebusermediarequestprivate.h"
 #endif
 
 /**
@@ -213,6 +222,8 @@ enum {
     EDITING_ENDED,
     VIEWPORT_ATTRIBUTES_RECOMPUTE_REQUESTED,
     VIEWPORT_ATTRIBUTES_CHANGED,
+    USER_MEDIA_REQUESTED,
+    USER_MEDIA_REQUEST_CANCELLED,
     RESOURCE_RESPONSE_RECEIVED,
     RESOURCE_LOAD_FINISHED,
     RESOURCE_CONTENT_LENGTH_RECEIVED,
@@ -2739,6 +2750,47 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
             G_TYPE_NONE, 1,
             WEBKIT_TYPE_VIEWPORT_ATTRIBUTES);
 
+#if ENABLE(MEDIA_STREAM)
+
+    /*
+     * WebKitWebView::user-media-requested
+     * @web_view: the object which received the signal
+     * @request:
+     *
+     * ...
+     *
+     * Since:
+     */
+    webkit_web_view_signals[USER_MEDIA_REQUESTED] = g_signal_new("user-media-requested",
+            G_TYPE_FROM_CLASS(webViewClass),
+            (GSignalFlags)(G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION),
+            0,
+            0, 0,
+            webkit_marshal_VOID__OBJECT_OBJECT,
+            G_TYPE_NONE, 2,
+            WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST,
+            WEBKIT_TYPE_WEB_USER_MEDIA_LIST);
+
+    /*
+     * WebKitWebView::user-media-request-cancelled
+     * @web_view: the object which received the signal
+     * @request:
+     *
+     * ...
+     *
+     * Since:
+     */
+    webkit_web_view_signals[USER_MEDIA_REQUEST_CANCELLED] = g_signal_new("user-media-request-cancelled",
+            G_TYPE_FROM_CLASS(webViewClass),
+            (GSignalFlags)(G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION),
+            0,
+            0, 0,
+            webkit_marshal_VOID__OBJECT,
+            G_TYPE_NONE, 1,
+            WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST);
+
+#endif /* ENABLE(MEDIA_STREAM) */
+
     /**
      * WebKitWebView::entering-fullscreen:
      * @web_view: the #WebKitWebView on which the signal is emitted.
@@ -3434,6 +3486,10 @@ static void webkit_web_view_update_settings(WebKitWebView* webView)
     coreSettings->setWebGLEnabled(settingsPrivate->enableWebgl);
 #endif
 
+#if ENABLE(MEDIA_STREAM)
+    WebCore::RuntimeEnabledFeatures::setMediaStreamEnabled(settingsPrivate->enableMediaStream);
+#endif
+
 #if USE(ACCELERATED_COMPOSITING)
     coreSettings->setAcceleratedCompositingEnabled(settingsPrivate->enableAcceleratedCompositing);
 #endif
@@ -3630,7 +3686,7 @@ static void webkit_web_view_init(WebKitWebView* webView)
 #endif
 
 #if ENABLE(MEDIA_STREAM)
-    priv->userMediaClient = adoptPtr(new UserMediaClientGtk);
+    priv->userMediaClient = adoptPtr(new UserMediaClientGtk(webView));
     WebCore::provideUserMediaTo(priv->corePage, priv->userMediaClient.get());
 #endif
 
@@ -5324,6 +5380,57 @@ void webViewExitFullscreen(WebKitWebView* webView)
         priv->fullscreenVideoController->exitFullscreen();
 #endif
 }
+
+#if ENABLE(MEDIA_STREAM)
+/**
+ * webkit_web_view_succeed_user_media_request:
+ * @webView: a #WebKitWebView
+ * @webRequest: a #WebKitWebUserMediaRequest
+ * @webUserMediaList: a #WebKitWebUserMediaList
+ *
+ * Since: FIXME
+ **/
+void webkit_web_view_succeed_user_media_request(WebKitWebView *webView, WebKitWebUserMediaRequest *webRequest, WebKitWebUserMediaList *webUserMediaList)
+{
+    g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
+    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(webUserMediaList));
+
+    WebKitWebViewPrivate* priv = webView->priv;
+
+    MediaStreamSourceVector& audioSources = audioCore(webUserMediaList);
+    MediaStreamSourceVector& videoSources = videoCore(webUserMediaList);
+
+    for (size_t i = audioSources.size() - 1; i != (size_t) -1; --i)
+        if (!webkit_web_user_media_list_get_audio_item_selected(webUserMediaList, i))
+            audioSources.remove(i);
+
+    for (size_t i = videoSources.size() - 1; i != (size_t) -1; --i)
+        if (!webkit_web_user_media_list_get_video_item_selected(webUserMediaList, i))
+            videoSources.remove(i);
+
+    UserMediaClientGtk* client = static_cast<UserMediaClientGtk*>(priv->userMediaClient.get());
+    client->userMediaRequestSucceeded(core(webRequest), audioSources, videoSources);
+}
+
+/**
+ * webkit_web_view_fail_user_media_request:
+ * @webView: a #WebKitWebView
+ * @webRequest: a #WebKitWebUserMediaRequest
+ *
+ * Since: FIXME
+ **/
+void webkit_web_view_fail_user_media_request(WebKitWebView *webView, WebKitWebUserMediaRequest *webRequest)
+{
+    g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
+    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
+
+    WebKitWebViewPrivate* priv = webView->priv;
+
+    UserMediaClientGtk* client = static_cast<UserMediaClientGtk*>(priv->userMediaClient.get());
+    client->userMediaRequestFailed(core(webRequest));
+}
+#endif // ENABLE(MEDIA_STREAM)
 
 #if ENABLE(ICONDATABASE)
 void webkitWebViewIconLoaded(WebKitFaviconDatabase* database, const char* frameURI, WebKitWebView* webView)

@@ -17,26 +17,44 @@
  * Boston, MA 02110-1301, USA.
  *
  */
+
+
 #ifndef UserMediaClientGtk_h
 #define UserMediaClientGtk_h
 
 #if ENABLE(MEDIA_STREAM)
 
+#include "MediaStreamSource.h"
 #include "UserMediaClient.h"
+#include <wtf/HashSet.h>
+
+typedef struct _WebKitWebView WebKitWebView;
+
+namespace WebCore {
+class UserMediaRequest;
+}
 
 namespace WebKit {
 
 class UserMediaClientGtk : public WebCore::UserMediaClient {
 public:
-    UserMediaClientGtk();
-    virtual ~UserMediaClientGtk();
+    UserMediaClientGtk(WebKitWebView*);
 
     virtual void pageDestroyed();
-    virtual void requestUserMedia(WTF::PassRefPtr<WebCore::UserMediaRequest>, const WebCore::MediaStreamSourceVector&, const WebCore::MediaStreamSourceVector&);
+
+    virtual void requestUserMedia(PassRefPtr<WebCore::UserMediaRequest>, const WebCore::MediaStreamSourceVector&, const WebCore::MediaStreamSourceVector&);
     virtual void cancelUserMediaRequest(WebCore::UserMediaRequest*);
+
+    virtual void userMediaRequestSucceeded(WebCore::UserMediaRequest*, const WebCore::MediaStreamSourceVector&, const WebCore::MediaStreamSourceVector&);
+    virtual void userMediaRequestFailed(WebCore::UserMediaRequest*);
+
+private:
+    WebKitWebView* m_webView;
+
+    HashSet<RefPtr<WebCore::UserMediaRequest> > m_requestSet;
 };
 
-} // namespace WebKit
+}
 
 #endif // ENABLE(MEDIA_STREAM)
 

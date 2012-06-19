@@ -67,6 +67,7 @@ WTFLogChannel LogWebAudio =          { 0x20000000, "WebCoreLogLevel", WTFLogChan
 WTFLogChannel LogCompositing =       { 0x40000000, "WebCoreLogLevel", WTFLogChannelOff };
 WTFLogChannel LogGamepad =           { 0x80000000, "WebCoreLogLevel", WTFLogChannelOff };
 
+WTFLogChannel LogMediaStream =       { 0x80000000, "WebCoreLogLevel", WTFLogChannelOn };
 
 WTFLogChannel* getChannelFromName(const String& channelName)
 {
@@ -99,6 +100,9 @@ WTFLogChannel* getChannelFromName(const String& channelName)
 
     if (equalIgnoringCase(channelName, String("Media")))
         return &LogMedia;
+
+    if (equalIgnoringCase(channelName, String("MediaStream")))
+        return &LogMediaStream;
 
     if (equalIgnoringCase(channelName, String("Network")))
         return &LogNetwork;

@@ -4822,6 +4822,8 @@ webcoregtk_sources += \
 	Source/WebCore/platform/graphics/gstreamer/MediaPlayerPrivateGStreamer.h \
 	Source/WebCore/platform/graphics/gstreamer/PlatformVideoWindowGtk.cpp \
 	Source/WebCore/platform/graphics/gstreamer/PlatformVideoWindow.h \
+	Source/WebCore/platform/graphics/gstreamer/StreamMediaPlayerPrivateGStreamer.cpp \
+	Source/WebCore/platform/graphics/gstreamer/StreamMediaPlayerPrivateGStreamer.h \
 	Source/WebCore/platform/graphics/gstreamer/VideoSinkGStreamer.cpp \
 	Source/WebCore/platform/graphics/gstreamer/VideoSinkGStreamer.h \
 	Source/WebCore/platform/graphics/gstreamer/WebKitWebSourceGStreamer.cpp \
@@ -4901,7 +4903,28 @@ webcoregtk_sources += \
 	Source/WebCore/platform/gtk/SoundGtk.cpp \
 	Source/WebCore/platform/gtk/WidgetGtk.cpp \
 	Source/WebCore/platform/gtk/WidgetRenderingContext.cpp \
-	Source/WebCore/platform/gtk/WidgetRenderingContext.h
+	Source/WebCore/platform/gtk/WidgetRenderingContext.h \
+	Source/WebCore/platform/mediastream/gstreamer/CentralPipelineUnit.h \
+	Source/WebCore/platform/mediastream/gstreamer/CentralPipelineUnit.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/MediaStreamCenterGStreamer.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/MediaStreamCenterGStreamer.h \
+	Source/WebCore/platform/mediastream/gstreamer/MediaStreamCenterPrivateGStreamer.h \
+	Source/WebCore/platform/mediastream/gstreamer/SourceFactory.h \
+	Source/WebCore/platform/mediastream/gstreamer/MediaStreamCenterPrivateGStreamer.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/PeerConnectionHandler.h \
+	Source/WebCore/platform/mediastream/gstreamer/PeerConnectionHandlerConfiguration.h \
+	Source/WebCore/platform/mediastream/gstreamer/PeerConnectionHandlerConfiguration.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/PeerConnection00Handler.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/Candidate.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/Candidate.h \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/Crypto.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/Crypto.h \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/MediaDescription.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/MediaDescription.h \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/Payload.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/Payload.h \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/SignalingMessage.cpp \
+	Source/WebCore/platform/mediastream/gstreamer/sdp/SignalingMessage.h
 
 if TARGET_X11
 webcoregtk_sources += \
@@ -5042,6 +5065,15 @@ dom_binding_idls += \
 	$(WebCore)/Modules/webdatabase/SQLTransactionSyncCallback.idl \
 	$(WebCore)/Modules/webdatabase/WorkerContextWebDatabase.idl
 endif # END ENABLE_SQL_DATABASE
+
+# ---
+# Farstream 
+# ---
+if USE_FARSTREAM
+webcoregtk_sources += \
+        Source/WebCore/platform/mediastream/gstreamer/FsMediaStream.cpp \
+        Source/WebCore/platform/mediastream/gstreamer/FsMediaStream.h
+endif # END USE_FARSTREAM
 
 # ----
 # HTML5 data transfer items support

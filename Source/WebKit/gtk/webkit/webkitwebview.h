@@ -33,6 +33,8 @@
 #include <webkit/webkitwebframe.h>
 #include <webkit/webkitwebhistoryitem.h>
 #include <webkit/webkitwebsettings.h>
+#include <webkit/webkitwebusermedialist.h>
+#include <webkit/webkitwebusermediarequest.h>
 
 G_BEGIN_DECLS
 
@@ -448,6 +450,15 @@ webkit_web_view_get_viewport_attributes         (WebKitWebView        *web_view)
 
 WEBKIT_API cairo_surface_t*
 webkit_web_view_get_snapshot                    (WebKitWebView        *web_view);
+
+WEBKIT_API void
+webkit_web_view_succeed_user_media_request      (WebKitWebView        *webView,
+                                                 WebKitWebUserMediaRequest *webRequest,
+                                                 WebKitWebUserMediaList *webUserMediaList);
+
+WEBKIT_API void
+webkit_web_view_fail_user_media_request         (WebKitWebView        *webView,
+                                                 WebKitWebUserMediaRequest *webRequest);
 
 G_END_DECLS
 

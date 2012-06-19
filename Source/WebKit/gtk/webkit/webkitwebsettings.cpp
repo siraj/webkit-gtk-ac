@@ -119,6 +119,7 @@ enum {
     PROP_ENABLE_FULLSCREEN,
     PROP_ENABLE_DNS_PREFETCHING,
     PROP_ENABLE_WEBGL,
+    PROP_ENABLE_MEDIA_STREAM,
     PROP_ENABLE_WEB_AUDIO,
     PROP_ENABLE_ACCELERATED_COMPOSITING,
     PROP_ENABLE_SMOOTH_SCROLLING,
@@ -958,6 +959,23 @@ static void webkit_web_settings_class_init(WebKitWebSettingsClass* klass)
                                                          _("Whether WebKit prefetches domain names"),
                                                          TRUE,
                                                          flags));
+    /**
+    * WebKitWebSettings:enable-media-stream:
+    *
+    * Enable or disable support for Media Streaming on pages. Media Streaming is
+    * an experimental proposal for allowing web pages to access local video and
+    * audio input devices.  The standard is currently a work-in-progress as part
+    * of the Web Applications 1.0 specification from WHATWG.
+    *
+    * Since: FIXME
+    */
+    g_object_class_install_property(gobject_class,
+                                    PROP_ENABLE_MEDIA_STREAM,
+                                    g_param_spec_boolean("enable-media-stream",
+                                                         _("Enable Media Streaming"),
+                                                         _("Whether Media Streaming should be enabled"),
+                                                         FALSE,
+                                                         flags));
 
     /**
     * WebKitWebSettings:enable-smooth-scrolling
@@ -1180,6 +1198,9 @@ static void webkit_web_settings_set_property(GObject* object, guint prop_id, con
     case PROP_ENABLE_WEBGL:
         priv->enableWebgl = g_value_get_boolean(value);
         break;
+    case PROP_ENABLE_MEDIA_STREAM:
+        priv->enableMediaStream = g_value_get_boolean(value);
+        break;
     case PROP_ENABLE_WEB_AUDIO:
         priv->enableWebAudio = g_value_get_boolean(value);
         break;
@@ -1353,6 +1374,9 @@ static void webkit_web_settings_get_property(GObject* object, guint prop_id, GVa
         break;
     case PROP_ENABLE_WEBGL:
         g_value_set_boolean(value, priv->enableWebgl);
+        break;
+    case PROP_ENABLE_MEDIA_STREAM:
+        g_value_set_boolean(value, priv->enableMediaStream);
         break;
     case PROP_ENABLE_WEB_AUDIO:
         g_value_set_boolean(value, priv->enableWebAudio);

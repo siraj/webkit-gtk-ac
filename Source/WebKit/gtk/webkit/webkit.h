@@ -51,6 +51,8 @@
 #include <webkit/webkitwebpolicydecision.h>
 #include <webkit/webkitwebresource.h>
 #include <webkit/webkitwebsettings.h>
+#include <webkit/webkitwebusermedialist.h>
+#include <webkit/webkitwebusermediarequest.h>
 #include <webkit/webkitwebview.h>
 #include <webkit/webkitwebwindowfeatures.h>
 
