@@ -14,12 +14,10 @@ LIST(APPEND WebCore_INCLUDE_DIRECTORIES
   "${WEBCORE_DIR}/platform/text/efl"
   "${WEBCORE_DIR}/plugins/efl"
   "${WEBKIT_DIR}/efl/WebCoreSupport"
-  "${WEBKIT_DIR}/efl/ewk"
 )
 
 LIST(APPEND WebCore_SOURCES
   accessibility/efl/AccessibilityObjectEfl.cpp
-  bindings/js/ScriptControllerEfl.cpp
   page/efl/DragControllerEfl.cpp
   page/efl/EventHandlerEfl.cpp
   platform/Cursor.cpp
@@ -47,8 +45,6 @@ LIST(APPEND WebCore_SOURCES
   platform/efl/PlatformKeyboardEventEfl.cpp
   platform/efl/PlatformMouseEventEfl.cpp
   platform/efl/PlatformScreenEfl.cpp
-  platform/efl/PlatformTouchEventEfl.cpp
-  platform/efl/PlatformTouchPointEfl.cpp
   platform/efl/PlatformWheelEventEfl.cpp
   platform/efl/PopupMenuEfl.cpp
   platform/efl/RefPtrEfl.cpp
@@ -226,8 +222,10 @@ LIST(APPEND WebCore_LIBRARIES
   ${LIBXSLT_LIBRARIES}
   ${PNG_LIBRARY}
   ${SQLITE_LIBRARIES}
-  ${Glib_LIBRARIES}
-  ${LIBSOUP24_LIBRARIES}
+  ${GLIB_LIBRARIES}
+  ${GLIB_GIO_LIBRARIES}
+  ${GLIB_GOBJECT_LIBRARIES}
+  ${LIBSOUP_LIBRARIES}
   ${ZLIB_LIBRARIES}
 )
 
@@ -241,8 +239,8 @@ LIST(APPEND WebCore_INCLUDE_DIRECTORIES
   ${LIBXML2_INCLUDE_DIR}
   ${LIBXSLT_INCLUDE_DIR}
   ${SQLITE_INCLUDE_DIR}
-  ${Glib_INCLUDE_DIRS}
-  ${LIBSOUP24_INCLUDE_DIRS}
+  ${GLIB_INCLUDE_DIRS}
+  ${LIBSOUP_INCLUDE_DIRS}
   ${ZLIB_INCLUDE_DIRS}
 )
 

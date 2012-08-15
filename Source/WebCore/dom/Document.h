@@ -153,7 +153,7 @@ class SVGDocumentExtensions;
 class TransformSource;
 #endif
 
-#if ENABLE(DASHBOARD_SUPPORT)
+#if ENABLE(DASHBOARD_SUPPORT) || ENABLE(WIDGET_REGION)
 struct DashboardRegionValue;
 #endif
 
@@ -766,8 +766,12 @@ public:
     void textNodesMerged(Text* oldNode, unsigned offset);
     void textNodeSplit(Text* oldNode);
 
+    void createDOMWindow();
+    void takeDOMWindowFrom(Document*);
+
+    DOMWindow* domWindow() const { return m_domWindow.get(); }
+    // In DOM Level 2, the Document's DOMWindow is called the defaultView.
     DOMWindow* defaultView() const { return domWindow(); } 
-    DOMWindow* domWindow() const;
 
     // Helper functions for forwarding DOMWindow event related tasks to the DOMWindow if it exists.
     void setWindowAttributeEventListener(const AtomicString& eventType, PassRefPtr<EventListener>);
@@ -794,8 +798,7 @@ public:
         TRANSITIONEND_LISTENER               = 0x800,
         BEFORELOAD_LISTENER                  = 0x1000,
         TOUCH_LISTENER                       = 0x2000,
-        SCROLL_LISTENER                      = 0x4000,
-        REGIONLAYOUTUPDATE_LISTENER          = 0x8000
+        SCROLL_LISTENER                      = 0x4000
     };
 
     bool hasListenerType(ListenerType listenerType) const { return (m_listenerTypes & listenerType); }
@@ -1019,7 +1022,7 @@ public:
     void setFrameElementsShouldIgnoreScrolling(bool ignore) { m_frameElementsShouldIgnoreScrolling = ignore; }
     bool frameElementsShouldIgnoreScrolling() const { return m_frameElementsShouldIgnoreScrolling; }
 
-#if ENABLE(DASHBOARD_SUPPORT)
+#if ENABLE(DASHBOARD_SUPPORT) || ENABLE(WIDGET_REGION)
     void setDashboardRegionsDirty(bool f) { m_dashboardRegionsDirty = f; }
     bool dashboardRegionsDirty() const { return m_dashboardRegionsDirty; }
     bool hasDashboardRegions () const { return m_hasDashboardRegions; }
@@ -1266,6 +1269,8 @@ private:
     Vector<OwnPtr<FontData> > m_customFonts;
 
     Frame* m_frame;
+    RefPtr<DOMWindow> m_domWindow;
+
     OwnPtr<CachedResourceLoader> m_cachedResourceLoader;
     RefPtr<DocumentParser> m_parser;
     RefPtr<ContextFeatures> m_contextFeatures;
@@ -1448,7 +1453,7 @@ private:
     OwnPtr<SVGDocumentExtensions> m_svgExtensions;
 #endif
 
-#if ENABLE(DASHBOARD_SUPPORT)
+#if ENABLE(DASHBOARD_SUPPORT) || ENABLE(WIDGET_REGION)
     Vector<DashboardRegionValue> m_dashboardRegions;
     bool m_hasDashboardRegions;
     bool m_dashboardRegionsDirty;

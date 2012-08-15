@@ -78,7 +78,7 @@
 #include "StyleFilterData.h"
 #endif
 
-#if ENABLE(DASHBOARD_SUPPORT)
+#if ENABLE(DASHBOARD_SUPPORT) || ENABLE(WIDGET_REGION)
 #include "StyleDashboardRegion.h"
 #endif
 
@@ -105,6 +105,7 @@ class BorderData;
 class CounterContent;
 class CursorList;
 class IntRect;
+class MemoryObjectInfo;
 class Pair;
 class ShadowData;
 class StyleImage;
@@ -593,18 +594,18 @@ public:
     EClear clear() const { return static_cast<EClear>(noninherited_flags._clear); }
     ETableLayout tableLayout() const { return static_cast<ETableLayout>(noninherited_flags._table_layout); }
 
-    const Font& font() const { return inherited->font; }
-    const FontMetrics& fontMetrics() const { return inherited->font.fontMetrics(); }
-    const FontDescription& fontDescription() const { return inherited->font.fontDescription(); }
-    int fontSize() const { return inherited->font.pixelSize(); }
+    const Font& font() const;
+    const FontMetrics& fontMetrics() const;
+    const FontDescription& fontDescription() const;
+    int fontSize() const;
 
     Length textIndent() const { return rareInheritedData->indent; }
     ETextAlign textAlign() const { return static_cast<ETextAlign>(inherited_flags._text_align); }
     ETextTransform textTransform() const { return static_cast<ETextTransform>(inherited_flags._text_transform); }
     ETextDecoration textDecorationsInEffect() const { return static_cast<ETextDecoration>(inherited_flags._text_decorations); }
     ETextDecoration textDecoration() const { return static_cast<ETextDecoration>(visual->textDecoration); }
-    int wordSpacing() const { return inherited->font.wordSpacing(); }
-    int letterSpacing() const { return inherited->font.letterSpacing(); }
+    int wordSpacing() const;
+    int letterSpacing() const;
 
     float zoom() const { return visual->m_zoom; }
     float effectiveZoom() const { return rareInheritedData->m_effectiveZoom; }
@@ -612,23 +613,8 @@ public:
     TextDirection direction() const { return static_cast<TextDirection>(inherited_flags._direction); }
     bool isLeftToRightDirection() const { return direction() == LTR; }
 
-    Length lineHeight() const { return inherited->line_height; }
-    int computedLineHeight(RenderView* renderView = 0) const
-    {
-        const Length& lh = inherited->line_height;
-
-        // Negative value means the line height is not set.  Use the font's built-in spacing.
-        if (lh.isNegative())
-            return fontMetrics().lineSpacing();
-
-        if (lh.isPercent())
-            return minimumValueForLength(lh, fontSize());
-
-        if (lh.isViewportPercentage())
-            return valueForLength(lh, 0, renderView);
-
-        return lh.value();
-    }
+    Length lineHeight() const;
+    int computedLineHeight(RenderView* = 0) const;
 
     EWhiteSpace whiteSpace() const { return static_cast<EWhiteSpace>(inherited_flags._white_space); }
     static bool autoWrap(EWhiteSpace ws)
@@ -716,8 +702,8 @@ public:
     StyleImage* maskBoxImageSource() const { return rareNonInheritedData->m_maskBoxImage.image(); }
  
     EBorderCollapse borderCollapse() const { return static_cast<EBorderCollapse>(inherited_flags._border_collapse); }
-    short horizontalBorderSpacing() const { return inherited->horizontal_border_spacing; }
-    short verticalBorderSpacing() const { return inherited->vertical_border_spacing; }
+    short horizontalBorderSpacing() const;
+    short verticalBorderSpacing() const;
     EEmptyCell emptyCells() const { return static_cast<EEmptyCell>(inherited_flags._empty_cells); }
     ECaptionSide captionSide() const { return static_cast<ECaptionSide>(inherited_flags._caption_side); }
 
@@ -725,7 +711,7 @@ public:
     short counterReset() const { return rareNonInheritedData->m_counterReset; }
 
     EListStyleType listStyleType() const { return static_cast<EListStyleType>(inherited_flags._list_style_type); }
-    StyleImage* listStyleImage() const { return inherited->list_style_image.get(); }
+    StyleImage* listStyleImage() const;
     EListStylePosition listStylePosition() const { return static_cast<EListStylePosition>(inherited_flags._list_style_position); }
 
     Length marginTop() const { return surround->margin.top(); }
@@ -798,7 +784,7 @@ public:
     EBoxOrient boxOrient() const { return static_cast<EBoxOrient>(rareNonInheritedData->m_deprecatedFlexibleBox->orient); }
     EBoxPack boxPack() const { return static_cast<EBoxPack>(rareNonInheritedData->m_deprecatedFlexibleBox->pack); }
 
-    float order() const { return rareNonInheritedData->m_order; }
+    int order() const { return rareNonInheritedData->m_order; }
     float flexGrow() const { return rareNonInheritedData->m_flexibleBox->m_flexGrow; }
     float flexShrink() const { return rareNonInheritedData->m_flexibleBox->m_flexShrink; }
     Length flexBasis() const { return rareNonInheritedData->m_flexibleBox->m_flexBasis; }
@@ -1011,7 +997,7 @@ public:
     void setMinHeight(Length v) { SET_VAR(m_box, m_minHeight, v) }
     void setMaxHeight(Length v) { SET_VAR(m_box, m_maxHeight, v) }
 
-#if ENABLE(DASHBOARD_SUPPORT)
+#if ENABLE(DASHBOARD_SUPPORT) || ENABLE(WIDGET_REGION)
     Vector<StyleDashboardRegion> dashboardRegions() const { return rareNonInheritedData->m_dashboardRegions; }
     void setDashboardRegions(Vector<StyleDashboardRegion> regions) { SET_VAR(rareNonInheritedData, m_dashboardRegions, regions); }
 
@@ -1115,19 +1101,12 @@ public:
     void setClear(EClear v) { noninherited_flags._clear = v; }
     void setTableLayout(ETableLayout v) { noninherited_flags._table_layout = v; }
 
-    bool setFontDescription(const FontDescription& v)
-    {
-        if (inherited->font.fontDescription() != v) {
-            inherited.access()->font = Font(v, inherited->font.letterSpacing(), inherited->font.wordSpacing());
-            return true;
-        }
-        return false;
-    }
+    bool setFontDescription(const FontDescription&);
 
     // Only used for blending font sizes when animating, or MathML anonymous blocks.
     void setBlendedFontSize(int);
 
-    void setColor(const Color& v) { SET_VAR(inherited, color, v) }
+    void setColor(const Color&);
     void setTextIndent(Length v) { SET_VAR(rareInheritedData, indent, v) }
     void setTextAlign(ETextAlign v) { inherited_flags._text_align = v; }
     void setTextTransform(ETextTransform v) { inherited_flags._text_transform = v; }
@@ -1135,7 +1114,7 @@ public:
     void setTextDecorationsInEffect(ETextDecoration v) { inherited_flags._text_decorations = v; }
     void setTextDecoration(ETextDecoration v) { SET_VAR(visual, textDecoration, v); }
     void setDirection(TextDirection v) { inherited_flags._direction = v; }
-    void setLineHeight(Length v) { SET_VAR(inherited, line_height, v) }
+    void setLineHeight(Length);
     bool setZoom(float);
     void setZoomWithoutReturnValue(float f) { setZoom(f); }
     bool setEffectiveZoom(float);
@@ -1154,8 +1133,8 @@ public:
 
     void setWhiteSpace(EWhiteSpace v) { inherited_flags._white_space = v; }
 
-    void setWordSpacing(int v) { inherited.access()->font.setWordSpacing(v); }
-    void setLetterSpacing(int v) { inherited.access()->font.setLetterSpacing(v); }
+    void setWordSpacing(int);
+    void setLetterSpacing(int);
 
     void clearBackgroundLayers() { m_background.access()->m_background = FillLayer(BackgroundFillLayer); }
     void inheritBackgroundLayers(const FillLayer& parent) { m_background.access()->m_background = parent; }
@@ -1188,8 +1167,8 @@ public:
     void setMaskSize(LengthSize l) { SET_VAR(rareNonInheritedData, m_mask.m_sizeLength, l) }
 
     void setBorderCollapse(EBorderCollapse collapse) { inherited_flags._border_collapse = collapse; }
-    void setHorizontalBorderSpacing(short v) { SET_VAR(inherited, horizontal_border_spacing, v) }
-    void setVerticalBorderSpacing(short v) { SET_VAR(inherited, vertical_border_spacing, v) }
+    void setHorizontalBorderSpacing(short);
+    void setVerticalBorderSpacing(short);
     void setEmptyCells(EEmptyCell v) { inherited_flags._empty_cells = v; }
     void setCaptionSide(ECaptionSide v) { inherited_flags._caption_side = v; }
 
@@ -1200,7 +1179,7 @@ public:
     void setCounterReset(short v) { SET_VAR(rareNonInheritedData, m_counterReset, v) }
 
     void setListStyleType(EListStyleType v) { inherited_flags._list_style_type = v; }
-    void setListStyleImage(PassRefPtr<StyleImage> v) { if (inherited->list_style_image != v) inherited.access()->list_style_image = v; }
+    void setListStyleImage(PassRefPtr<StyleImage>);
     void setListStylePosition(EListStylePosition v) { inherited_flags._list_style_position = v; }
 
     void resetMargin() { SET_VAR(surround, margin, LengthBox(Fixed)) }
@@ -1268,7 +1247,7 @@ public:
     void setFlexGrow(float f) { SET_VAR(rareNonInheritedData.access()->m_flexibleBox, m_flexGrow, f); }
     void setFlexShrink(float f) { SET_VAR(rareNonInheritedData.access()->m_flexibleBox, m_flexShrink, f); }
     void setFlexBasis(Length length) { SET_VAR(rareNonInheritedData.access()->m_flexibleBox, m_flexBasis, length); }
-    void setOrder(float o) { SET_VAR(rareNonInheritedData, m_order, o); }
+    void setOrder(int o) { SET_VAR(rareNonInheritedData, m_order, o); }
     void setAlignContent(EAlignContent p) { SET_VAR(rareNonInheritedData, m_alignContent, p); }
     void setAlignItems(EAlignItems a) { SET_VAR(rareNonInheritedData, m_alignItems, a); }
     void setAlignSelf(EAlignItems a) { SET_VAR(rareNonInheritedData, m_alignSelf, a); }
@@ -1483,22 +1462,9 @@ public:
 
     StyleDifference diff(const RenderStyle*, unsigned& changedContextSensitiveProperties) const;
 
-    bool isDisplayReplacedType() const
-    {
-        return display() == INLINE_BLOCK || display() == INLINE_BOX || display() == INLINE_TABLE || display() == INLINE_GRID;
-    }
-
-    bool isDisplayInlineType() const
-    {
-        return display() == INLINE || isDisplayReplacedType();
-    }
-
-    bool isOriginalDisplayInlineType() const
-    {
-        return originalDisplay() == INLINE || originalDisplay() == INLINE_BLOCK
-            || originalDisplay() == INLINE_BOX || originalDisplay() == INLINE_TABLE || originalDisplay() == INLINE_GRID;
-    }
-
+    bool isDisplayReplacedType() const { return isDisplayReplacedType(display()); }
+    bool isDisplayInlineType() const { return isDisplayInlineType(display()); }
+    bool isOriginalDisplayInlineType() const { return isDisplayInlineType(originalDisplay()); }
     bool isDisplayRegionType() const
     {
         return display() == BLOCK || display() == INLINE_BLOCK
@@ -1541,6 +1507,8 @@ public:
 
     void setHasExplicitlyInheritedProperties() { m_bitfields.setExplicitInheritance(true); }
     bool hasExplicitlyInheritedProperties() const { return m_bitfields.explicitInheritance(); }
+
+    void reportMemoryUsage(MemoryObjectInfo*) const;
     
     // Initial values for all the properties
     static EBorderCollapse initialBorderCollapse() { return BSEPARATE; }
@@ -1610,7 +1578,7 @@ public:
     static float initialFlexGrow() { return 0; }
     static float initialFlexShrink() { return 1; }
     static Length initialFlexBasis() { return Length(Auto); }
-    static float initialOrder() { return 0; }
+    static int initialOrder() { return 0; }
     static EAlignContent initialAlignContent() { return AlignContentStretch; }
     static EAlignItems initialAlignItems() { return AlignStretch; }
     static EAlignItems initialAlignSelf() { return AlignAuto; }
@@ -1715,7 +1683,7 @@ public:
 #if ENABLE(OVERFLOW_SCROLLING)
     static bool initialUseTouchOverflowScrolling() { return false; }
 #endif
-#if ENABLE(DASHBOARD_SUPPORT)
+#if ENABLE(DASHBOARD_SUPPORT) || ENABLE(WIDGET_REGION)
     static const Vector<StyleDashboardRegion>& initialDashboardRegions();
     static const Vector<StyleDashboardRegion>& noneDashboardRegions();
 #endif
@@ -1723,7 +1691,7 @@ public:
     static const FilterOperations& initialFilter() { DEFINE_STATIC_LOCAL(FilterOperations, ops, ()); return ops; }
 #endif
 private:
-    void setVisitedLinkColor(const Color& v) { SET_VAR(inherited, visitedLinkColor, v) }
+    void setVisitedLinkColor(const Color&);
     void setVisitedLinkBackgroundColor(const Color& v) { SET_VAR(rareNonInheritedData, m_visitedLinkBackgroundColor, v) }
     void setVisitedLinkBorderLeftColor(const Color& v) { SET_VAR(rareNonInheritedData, m_visitedLinkBorderLeftColor, v) }
     void setVisitedLinkBorderRightColor(const Color& v) { SET_VAR(rareNonInheritedData, m_visitedLinkBorderRightColor, v) }
@@ -1748,6 +1716,20 @@ private:
         return isHorizontalWritingMode() ? getShadowVerticalExtent(shadow, logicalTop, logicalBottom) : getShadowHorizontalExtent(shadow, logicalTop, logicalBottom);
     }
 
+    bool isDisplayReplacedType(EDisplay display) const
+    {
+        return display == INLINE_BLOCK || display == INLINE_BOX
+#if ENABLE(CSS3_FLEXBOX)
+            || display == INLINE_FLEX
+#endif
+            || display == INLINE_TABLE || display == INLINE_GRID;
+    }
+
+    bool isDisplayInlineType(EDisplay display) const
+    {
+        return display == INLINE || isDisplayReplacedType(display);
+    }
+
     // Color accessors are all private to make sure callers use visitedDependentColor instead to access them.
     Color invalidColor() const { static Color invalid; return invalid; }
     Color borderLeftColor() const { return surround->border.left().color(); }
@@ -1755,13 +1737,13 @@ private:
     Color borderTopColor() const { return surround->border.top().color(); }
     Color borderBottomColor() const { return surround->border.bottom().color(); }
     Color backgroundColor() const { return m_background->color(); }
-    Color color() const { return inherited->color; }
+    Color color() const;
     Color columnRuleColor() const { return rareNonInheritedData->m_multiCol->m_rule.color(); }
     Color outlineColor() const { return m_background->outline().color(); }
     Color textEmphasisColor() const { return rareInheritedData->textEmphasisColor; }
     Color textFillColor() const { return rareInheritedData->textFillColor; }
     Color textStrokeColor() const { return rareInheritedData->textStrokeColor; }
-    Color visitedLinkColor() const { return inherited->visitedLinkColor; }
+    Color visitedLinkColor() const;
     Color visitedLinkBackgroundColor() const { return rareNonInheritedData->m_visitedLinkBackgroundColor; }
     Color visitedLinkBorderLeftColor() const { return rareNonInheritedData->m_visitedLinkBorderLeftColor; }
     Color visitedLinkBorderRightColor() const { return rareNonInheritedData->m_visitedLinkBorderRightColor; }

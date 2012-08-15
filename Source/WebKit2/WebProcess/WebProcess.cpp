@@ -796,7 +796,7 @@ static bool canPluginHandleResponse(const ResourceResponse& response)
     String pluginPath;
     bool blocked;
 
-    if (!WebProcess::shared().connection()->sendSync(Messages::WebContext::GetPluginPath(response.mimeType(), response.url().string()), Messages::WebContext::GetPluginPath::Reply(pluginPath, blocked), 0))
+    if (!WebProcess::shared().connection()->sendSync(Messages::WebProcessProxy::GetPluginPath(response.mimeType(), response.url().string()), Messages::WebProcessProxy::GetPluginPath::Reply(pluginPath, blocked), 0))
         return false;
 
     return !blocked && !pluginPath.isEmpty();
@@ -855,7 +855,7 @@ void WebProcess::getSitesWithPluginData(const Vector<String>& pluginPaths, uint6
     Vector<String> sites;
     copyToVector(sitesSet, sites);
 
-    connection()->send(Messages::WebContext::DidGetSitesWithPluginData(sites, callbackID), 0);
+    connection()->send(Messages::WebProcessProxy::DidGetSitesWithPluginData(sites, callbackID), 0);
 }
 
 void WebProcess::clearPluginSiteData(const Vector<String>& pluginPaths, const Vector<String>& sites, uint64_t flags, uint64_t maxAgeInSeconds, uint64_t callbackID)
@@ -879,7 +879,7 @@ void WebProcess::clearPluginSiteData(const Vector<String>& pluginPaths, const Ve
     }
 #endif
 
-    connection()->send(Messages::WebContext::DidClearPluginSiteData(callbackID), 0);
+    connection()->send(Messages::WebProcessProxy::DidClearPluginSiteData(callbackID), 0);
 }
 #endif
     

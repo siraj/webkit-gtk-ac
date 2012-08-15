@@ -51,6 +51,9 @@
 #ifndef QT_NO_SHORTCUT
 #include <QMenuBar>
 #endif
+#if !defined(QT_NO_PRINTER) && HAVE(QTPRINTSUPPORT)
+#include <QPrintPreviewDialog>
+#endif
 #include <QSlider>
 #include <QSplitter>
 #include <QStatusBar>
@@ -66,11 +69,7 @@
 #endif
 
 #if !defined(QT_NO_NETWORKDISKCACHE) && !defined(QT_NO_DESKTOPSERVICES)
-#if HAVE(QT5)
 #include <QStandardPaths>
-#else
-#include <QDesktopServices>
-#endif
 #include <QtNetwork/QNetworkDiskCache>
 #endif
 
@@ -241,7 +240,7 @@ void LauncherWindow::createChrome()
     fileMenu->addAction("Close Window", this, SLOT(close()), QKeySequence::Close);
     fileMenu->addSeparator();
     fileMenu->addAction("Take Screen Shot...", this, SLOT(screenshot()));
-#ifndef QT_NO_PRINTER
+#if !defined(QT_NO_PRINTER) && HAVE(QTPRINTSUPPORT)
     fileMenu->addAction(tr("Print..."), this, SLOT(print()), QKeySequence::Print);
 #endif
     fileMenu->addSeparator();
@@ -728,7 +727,7 @@ void LauncherWindow::toggleZoomTextOnly(bool b)
 
 void LauncherWindow::print()
 {
-#if !defined(QT_NO_PRINTER)
+#if !defined(QT_NO_PRINTER) && HAVE(QTPRINTSUPPORT)
     QPrintPreviewDialog dlg(this);
     connect(&dlg, SIGNAL(paintRequested(QPrinter*)),
             page()->mainFrame(), SLOT(print(QPrinter*)));
@@ -808,11 +807,7 @@ void LauncherWindow::setDiskCache(bool enable)
     QNetworkDiskCache* cache = 0;
     if (enable) {
         cache = new QNetworkDiskCache();
-#if HAVE(QT5)
         QString cacheLocation = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-#else
-        QString cacheLocation = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
-#endif
         cache->setCacheDirectory(cacheLocation);
     }
     page()->networkAccessManager()->setCache(cache);

@@ -91,6 +91,7 @@ LIST(APPEND WebCore_SOURCES
     platform/network/MIMESniffing.cpp
     platform/network/ProxyServer.cpp
     platform/network/blackberry/AutofillBackingStore.cpp
+    platform/network/blackberry/DNSBlackBerry.cpp
     platform/network/blackberry/DeferredData.cpp
     platform/network/blackberry/NetworkJob.cpp
     platform/network/blackberry/NetworkManager.cpp
@@ -129,7 +130,6 @@ LIST(APPEND WebCore_INCLUDE_DIRECTORIES
 
 # BlackBerry sources
 LIST(APPEND WebCore_SOURCES
-    bindings/js/ScriptControllerBlackBerry.cpp
     editing/blackberry/EditorBlackBerry.cpp
     editing/blackberry/SmartReplaceBlackBerry.cpp
     page/blackberry/AccessibilityObjectBlackBerry.cpp
@@ -269,9 +269,12 @@ IF (WTF_USE_ACCELERATED_COMPOSITING)
     LIST(APPEND WebCore_SOURCES
         ${WEBCORE_DIR}/platform/graphics/GraphicsLayer.cpp
         ${WEBCORE_DIR}/platform/graphics/blackberry/CanvasLayerWebKitThread.cpp
+        ${WEBCORE_DIR}/platform/graphics/blackberry/EGLImageLayerWebKitThread.cpp
+        ${WEBCORE_DIR}/platform/graphics/blackberry/EGLImageLayerCompositingThreadClient.cpp
         ${WEBCORE_DIR}/platform/graphics/blackberry/GraphicsLayerBlackBerry.cpp
         ${WEBCORE_DIR}/platform/graphics/blackberry/LayerAnimation.cpp
         ${WEBCORE_DIR}/platform/graphics/blackberry/LayerCompositingThread.cpp
+        ${WEBCORE_DIR}/platform/graphics/blackberry/LayerFilterRenderer.cpp
         ${WEBCORE_DIR}/platform/graphics/blackberry/LayerRenderer.cpp
         ${WEBCORE_DIR}/platform/graphics/blackberry/LayerRendererSurface.cpp
         ${WEBCORE_DIR}/platform/graphics/blackberry/LayerTile.cpp

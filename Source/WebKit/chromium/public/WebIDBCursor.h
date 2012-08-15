@@ -40,6 +40,14 @@ class WebIDBCursor {
 public:
     virtual ~WebIDBCursor() { }
 
+    enum Direction {
+        Next = 0,
+        NextNoDuplicate = 1,
+        Prev = 2,
+        PrevNoDuplicate = 3,
+    };
+
+    // FIXME: Remove these methods when callers are updated.
     virtual WebIDBKey key() const
     {
         WEBKIT_ASSERT_NOT_REACHED();
@@ -56,7 +64,6 @@ public:
         return WebSerializedScriptValue();
     }
 
-    virtual void update(const WebSerializedScriptValue&, WebIDBCallbacks*, WebExceptionCode&) { WEBKIT_ASSERT_NOT_REACHED(); }
     virtual void advance(unsigned long, WebIDBCallbacks*, WebExceptionCode&) { WEBKIT_ASSERT_NOT_REACHED(); }
     virtual void continueFunction(const WebIDBKey&, WebIDBCallbacks*, WebExceptionCode&) { WEBKIT_ASSERT_NOT_REACHED(); }
     virtual void deleteFunction(WebIDBCallbacks*, WebExceptionCode&) { WEBKIT_ASSERT_NOT_REACHED(); }

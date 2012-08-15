@@ -20,10 +20,12 @@
 #define WebPage_p_h
 
 #include "ChromeClient.h"
+#include "InRegionScroller.h"
 #include "InspectorClientBlackBerry.h"
 #include "InspectorOverlay.h"
 #if USE(ACCELERATED_COMPOSITING)
 #include "GLES2Context.h"
+#include "GraphicsLayerClient.h"
 #include "LayerRenderer.h"
 #include <EGL/egl.h>
 #endif
@@ -82,7 +84,12 @@ class WebPageCompositorPrivate;
 // In WebPagePrivate, the screen size is called the transformedViewportSize,
 // the viewport position is called the transformedScrollPosition,
 // and the viewport size is called the transformedActualVisibleSize.
-class WebPagePrivate : public PageClientBlackBerry, public WebSettingsDelegate, public Platform::GuardedPointerBase {
+class WebPagePrivate : public PageClientBlackBerry
+                     , public WebSettingsDelegate
+#if USE(ACCELERATED_COMPOSITING)
+                     , public WebCore::GraphicsLayerClient
+#endif
+                     , public Platform::GuardedPointerBase {
 public:
     enum ViewMode { Mobile, Desktop, FixedDesktop };
     enum LoadState { None /* on instantiation of page */, Provisional, Committed, Finished, Failed };
@@ -106,6 +113,8 @@ public:
     void prepareToDestroy();
 
     void enableCrossSiteXHR();
+    void addOriginAccessWhitelistEntry(const char* sourceOrigin, const char* destinationOrigin, bool allowDestinationSubdomains);
+    void removeOriginAccessWhitelistEntry(const char* sourceOrigin, const char* destinationOrigin, bool allowDestinationSubdomains);
 
     LoadState loadState() const { return m_loadState; }
     bool isLoading() const { return m_loadState == WebPagePrivate::Provisional || m_loadState == WebPagePrivate::Committed; }
@@ -126,7 +135,7 @@ public:
     WebCore::IntPoint calculateReflowedScrollPosition(const WebCore::FloatPoint& anchorOffset, double inverseScale);
     void setTextReflowAnchorPoint(const Platform::IntPoint& focalPoint);
 
-    void schedulePinchZoomAboutPoint(double scale, const WebCore::IntPoint& anchor);
+    void restoreHistoryViewState(Platform::IntSize contentsSize, Platform::IntPoint scrollPosition, double scale, bool shouldReflowBlock);
 
     // Perform actual zoom for block zoom.
     void zoomBlock();
@@ -141,7 +150,6 @@ public:
     bool scrollBy(int deltaX, int deltaY, bool scrollMainFrame = true);
 
     void enqueueRenderingOfClippedContentOfScrollableNodeAfterInRegionScrolling(WebCore::Node*);
-    std::vector<Platform::ScrollViewBase*> inRegionScrollableAreasForPoint(const Platform::IntPoint&);
     void notifyInRegionScrollStatusChanged(bool status);
     void setScrollOriginPoint(const Platform::IntPoint&);
     void setHasInRegionScrollableAreas(bool);
@@ -283,7 +291,7 @@ public:
     WebCore::Node* bestNodeForZoomUnderPoint(const WebCore::IntPoint&);
     WebCore::Node* bestChildNodeForClickRect(WebCore::Node* parentNode, const WebCore::IntRect& clickRect);
     WebCore::Node* nodeForZoomUnderPoint(const WebCore::IntPoint&);
-    WebCore::Node* adjustedBlockZoomNodeForZoomLimits(WebCore::Node*);
+    WebCore::Node* adjustedBlockZoomNodeForZoomAndExpandingRatioLimits(WebCore::Node*);
     WebCore::IntRect rectForNode(WebCore::Node*);
     WebCore::IntRect blockZoomRectForNode(WebCore::Node*);
     WebCore::IntRect adjustRectOffsetForFrameOffset(const WebCore::IntRect&, const WebCore::Node*);
@@ -327,13 +335,6 @@ public:
     void clearFocusNode();
     WebCore::Frame* focusedOrMainFrame() const;
     WebCore::Frame* mainFrame() const { return m_mainFrame; }
-
-    bool scrollNodeRecursively(WebCore::Node* originalNode, const WebCore::IntSize& delta);
-    bool scrollRenderer(WebCore::RenderObject* renderer, const WebCore::IntSize& delta);
-    void adjustScrollDelta(const WebCore::IntPoint& maxOffset, const WebCore::IntPoint& currentOffset, WebCore::IntSize& delta) const;
-
-    bool canScrollRenderBox(WebCore::RenderBox*);
-    bool canScrollInnerFrame(WebCore::Frame*) const;
 
 #if ENABLE(EVENT_MODE_METATAGS)
     void didReceiveCursorEventMode(WebCore::CursorEventMode);
@@ -391,6 +392,13 @@ public:
     WebCore::LayerRenderingResults lastCompositingResults() const;
     WebCore::GraphicsLayer* overlayLayer();
 
+    // Fallback GraphicsLayerClient implementation, used for various overlay layers.
+    virtual void notifyAnimationStarted(const WebCore::GraphicsLayer*, double time) { }
+    virtual void notifySyncRequired(const WebCore::GraphicsLayer*);
+    virtual void paintContents(const WebCore::GraphicsLayer*, WebCore::GraphicsContext&, WebCore::GraphicsLayerPaintingPhase, const WebCore::IntRect& inClip) { }
+    virtual bool showDebugBorders(const WebCore::GraphicsLayer*) const;
+    virtual bool showRepaintCounter(const WebCore::GraphicsLayer*) const;
+
     // WebKit thread, plumbed through from ChromeClientBlackBerry.
     void setRootLayerWebKitThread(WebCore::Frame*, WebCore::LayerWebKitThread*);
     void setNeedsOneShotDrawingSynchronization();
@@ -405,8 +413,8 @@ public:
     void commitRootLayer(const WebCore::IntRect&, const WebCore::IntSize&, bool);
     bool isAcceleratedCompositingActive() const { return m_compositor; }
     WebPageCompositorPrivate* compositor() const { return m_compositor.get(); }
-    void setCompositor(PassRefPtr<WebPageCompositorPrivate>, EGLContext compositingContext);
-    void setCompositorHelper(PassRefPtr<WebPageCompositorPrivate>, EGLContext compositingContext);
+    void setCompositor(PassRefPtr<WebPageCompositorPrivate>);
+    void setCompositorHelper(PassRefPtr<WebPageCompositorPrivate>);
     void setCompositorBackgroundColor(const WebCore::Color&);
     bool createCompositor();
     void destroyCompositor();
@@ -415,6 +423,8 @@ public:
     void suspendRootLayerCommit();
     void resumeRootLayerCommit();
     void blitVisibleContents();
+
+    void scheduleCompositingRun();
 #endif
 
     bool dispatchTouchEventToFullScreenPlugin(WebCore::PluginView*, const Platform::TouchEvent&);
@@ -446,7 +456,7 @@ public:
 
     void deferredTasksTimerFired(WebCore::Timer<WebPagePrivate>*);
 
-    void setInspectorOverlayClient(WebCore::InspectorOverlay::InspectorOverlayClient*);
+    void setInspectorOverlayClient(InspectorOverlay::InspectorOverlayClient*);
 
     void applySizeOverride(int overrideWidth, int overrideHeight);
     void setTextZoomFactor(float);
@@ -508,9 +518,6 @@ public:
 #endif
 
 #if ENABLE(FULLSCREEN_API)
-#if ENABLE(EVENT_MODE_METATAGS)
-    WebCore::TouchEventMode m_touchEventModePriorGoingFullScreen;
-#endif
 #if ENABLE(VIDEO)
     double m_scaleBeforeFullScreen;
     int m_xScrollOffsetBeforeFullScreen;
@@ -554,7 +561,7 @@ public:
 
     HashSet<WebCore::PluginView*> m_pluginViews;
 
-    RefPtr<WebCore::Node> m_inRegionScrollStartingNode;
+    OwnPtr<InRegionScroller> m_inRegionScroller;
 
 #if USE(ACCELERATED_COMPOSITING)
     bool m_isAcceleratedCompositingActive;
@@ -587,7 +594,7 @@ public:
     RefPtr<WebCore::DOMWrapperWorld> m_isolatedWorld;
     bool m_hasInRegionScrollableAreas;
     bool m_updateDelegatedOverlaysDispatched;
-    OwnPtr<WebCore::InspectorOverlay> m_inspectorOverlay;
+    OwnPtr<InspectorOverlay> m_inspectorOverlay;
 
     // There is no need to initialize the following members in WebPagePrivate's constructor,
     // because they are only used by WebPageTasks and the tasks will initialize them when

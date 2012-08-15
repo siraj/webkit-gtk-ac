@@ -1,3 +1,42 @@
+2012-08-14  Adam Barth  <abarth@webkit.org>
+
+        Delete Frame::domWindow() and Frame::existingDOMWindow()
+        https://bugs.webkit.org/show_bug.cgi?id=93990
+
+        Reviewed by Eric Seidel.
+
+        * WebFrame.cpp:
+        (WebFrame::DOMWindow):
+        (WebFrame::pendingFrameUnloadEventCount):
+
+2012-08-13  Tom Sepez  <tsepez@chromium.org>
+
+        [chromium] release FrameLoaderClientImpl::m_pluginWidget refptr upon Plugin Document detach.
+        https://bugs.webkit.org/show_bug.cgi?id=93283
+
+        Reviewed by Eric Seidel.
+
+        Change the client redirectDataToPlugin method(s) to expect the possibility of
+        a NULL argument, keeping existing behaviour otherwise.
+
+        * WebCoreSupport/WebFrameLoaderClient.cpp:
+        (WebFrameLoaderClient::redirectDataToPlugin):
+
+2012-08-05  Patrick Gansterer  <paroga@webkit.org>
+
+        [WIN] Use sizeof() for cbWndExtra values
+        https://bugs.webkit.org/show_bug.cgi?id=93179
+
+        Reviewed by Eric Carlson.
+
+        Using sizof() instead of hardcoding the pointer size of
+        the 32bit platform allows us to use the code on 64bit too.
+
+        * FullscreenVideoController.cpp:
+        (FullscreenVideoController::registerHUDWindowClass):
+        * WebView.cpp:
+        (WebView::registerWebViewWindowClass):
+
 2012-07-26  Gyuyoung Kim  <gyuyoung.kim@samsung.com>
 
         [Mac] Fix build break on Apple win bot after r123711

@@ -34,6 +34,7 @@
 #include "CSSComputedStyleDeclaration.h"
 #include "CSSRuleList.h"
 #include "Chrome.h"
+#include "ChromeClient.h"
 #include "Console.h"
 #include "Crypto.h"
 #include "DOMApplicationCache.h"
@@ -308,14 +309,14 @@ void DOMWindow::dispatchAllPendingUnloadEvents()
 
 // This function:
 // 1) Validates the pending changes are not changing to NaN
-// 2) Constrains the window rect to no smaller than 100 in each dimension and no
-//    bigger than the the float rect's dimensions.
+// 2) Constrains the window rect to the minimum window size and no bigger than
+//    the the float rect's dimensions.
 // 3) Constrain window rect to within the top and left boundaries of the screen rect
 // 4) Constraint the window rect to within the bottom and right boundaries of the
 //    screen rect.
 // 5) Translate the window rect coordinates to be within the coordinate space of
 //    the screen rect.
-void DOMWindow::adjustWindowRect(const FloatRect& screen, FloatRect& window, const FloatRect& pendingChanges)
+void DOMWindow::adjustWindowRect(const FloatRect& screen, FloatRect& window, const FloatRect& pendingChanges) const
 {
     // Make sure we're in a valid state before adjusting dimensions.
     ASSERT(isfinite(screen.x()));
@@ -336,11 +337,13 @@ void DOMWindow::adjustWindowRect(const FloatRect& screen, FloatRect& window, con
         window.setWidth(pendingChanges.width());
     if (!isnan(pendingChanges.height()))
         window.setHeight(pendingChanges.height());
-    
-    // Resize the window to between 100 and the screen width and height.
-    window.setWidth(min(max(100.0f, window.width()), screen.width()));
-    window.setHeight(min(max(100.0f, window.height()), screen.height()));
-    
+
+    ASSERT(m_frame);
+    Page* page = m_frame->page();
+    FloatSize minimumSize = page ? m_frame->page()->chrome()->client()->minimumWindowSize() : FloatSize(100, 100);
+    window.setWidth(min(max(minimumSize.width(), window.width()), screen.width()));
+    window.setHeight(min(max(minimumSize.height(), window.height()), screen.height()));
+
     // Constrain the window position to the screen.
     window.setX(max(screen.x(), min(window.x(), screen.maxX() - window.width())));
     window.setY(max(screen.y(), min(window.y(), screen.maxY() - window.height())));
@@ -388,11 +391,19 @@ bool DOMWindow::canShowModalDialogNow(const Frame* frame)
     return page->chrome()->canRunModalNow();
 }
 
-DOMWindow::DOMWindow(Frame* frame)
-    : FrameDestructionObserver(frame)
+DOMWindow::DOMWindow(Document* document)
+    : ContextDestructionObserver(document)
+    , FrameDestructionObserver(document->frame())
     , m_shouldPrintWhenFinishedLoading(false)
     , m_suspendedForPageCache(false)
 {
+    ASSERT(frame());
+    ASSERT(DOMWindow::document());
+}
+
+void DOMWindow::didSecureTransitionTo(Document* document)
+{
+    observeContext(document);
 }
 
 DOMWindow::~DOMWindow()
@@ -418,9 +429,6 @@ DOMWindow::~DOMWindow()
         ASSERT(!m_sessionStorage);
         ASSERT(!m_localStorage);
         ASSERT(!m_applicationCache);
-#if ENABLE(BLOB)
-        ASSERT(!m_domURL);
-#endif
     }
 #endif
 
@@ -444,7 +452,7 @@ const AtomicString& DOMWindow::interfaceName() const
 
 ScriptExecutionContext* DOMWindow::scriptExecutionContext() const
 {
-    return document();
+    return ContextDestructionObserver::scriptExecutionContext();
 }
 
 DOMWindow* DOMWindow::toDOMWindow()
@@ -455,11 +463,6 @@ DOMWindow* DOMWindow::toDOMWindow()
 PassRefPtr<MediaQueryList> DOMWindow::matchMedia(const String& media)
 {
     return document() ? document()->mediaQueryMatcher()->matchMedia(media) : 0;
-}
-
-void DOMWindow::setSecurityOrigin(SecurityOrigin* securityOrigin)
-{
-    m_securityOrigin = securityOrigin;
 }
 
 Page* DOMWindow::page()
@@ -587,14 +590,11 @@ void DOMWindow::clearDOMWindowProperties()
     m_sessionStorage = 0;
     m_localStorage = 0;
     m_applicationCache = 0;
-#if ENABLE(BLOB)
-    m_domURL = 0;
-#endif
 }
 
 bool DOMWindow::isCurrentlyDisplayedInFrame() const
 {
-    return m_frame && m_frame->domWindow() == this;
+    return m_frame && m_frame->document()->domWindow() == this;
 }
 
 #if ENABLE(ORIENTATION_EVENTS)
@@ -746,7 +746,7 @@ Storage* DOMWindow::sessionStorage(ExceptionCode& ec) const
     if (!document)
         return 0;
 
-    if (!document->securityOrigin()->canAccessLocalStorage()) {
+    if (!document->securityOrigin()->canAccessLocalStorage(document->topDocument()->securityOrigin())) {
         ec = SECURITY_ERR;
         return 0;
     }
@@ -773,7 +773,7 @@ Storage* DOMWindow::localStorage(ExceptionCode& ec) const
     if (!document)
         return 0;
 
-    if (!document->securityOrigin()->canAccessLocalStorage()) {
+    if (!document->securityOrigin()->canAccessLocalStorage(document->topDocument()->securityOrigin())) {
         ec = SECURITY_ERR;
         return 0;
     }
@@ -1260,7 +1260,7 @@ DOMWindow* DOMWindow::self() const
     if (!m_frame)
         return 0;
 
-    return m_frame->domWindow();
+    return m_frame->document()->domWindow();
 }
 
 DOMWindow* DOMWindow::opener() const
@@ -1272,7 +1272,7 @@ DOMWindow* DOMWindow::opener() const
     if (!opener)
         return 0;
 
-    return opener->domWindow();
+    return opener->document()->domWindow();
 }
 
 DOMWindow* DOMWindow::parent() const
@@ -1282,9 +1282,9 @@ DOMWindow* DOMWindow::parent() const
 
     Frame* parent = m_frame->tree()->parent();
     if (parent)
-        return parent->domWindow();
+        return parent->document()->domWindow();
 
-    return m_frame->domWindow();
+    return m_frame->document()->domWindow();
 }
 
 DOMWindow* DOMWindow::top() const
@@ -1296,17 +1296,19 @@ DOMWindow* DOMWindow::top() const
     if (!page)
         return 0;
 
-    return m_frame->tree()->top()->domWindow();
+    return m_frame->tree()->top()->document()->domWindow();
 }
 
 Document* DOMWindow::document() const
 {
-    if (!isCurrentlyDisplayedInFrame())
-        return 0;
+    ScriptExecutionContext* context = ContextDestructionObserver::scriptExecutionContext();
+    ASSERT(!context || context->isDocument());
+    return static_cast<Document*>(context);
+}
 
-    // FIXME: This function shouldn't need a frame to work.
-    ASSERT(m_frame->document());
-    return m_frame->document();
+SecurityOrigin* DOMWindow::securityOrigin() const
+{
+    return document() ? document()->securityOrigin() : 0;
 }
 
 PassRefPtr<StyleMedia> DOMWindow::styleMedia() const
@@ -1758,14 +1760,14 @@ void DOMWindow::printErrorMessage(const String& message)
 
 String DOMWindow::crossDomainAccessErrorMessage(DOMWindow* activeWindow)
 {
-    const KURL& activeWindowURL = activeWindow->url();
+    const KURL& activeWindowURL = activeWindow->document()->url();
     if (activeWindowURL.isNull())
         return String();
 
     // FIXME: This error message should contain more specifics of why the same origin check has failed.
     // Perhaps we should involve the security origin object in composing it.
     // FIXME: This message, and other console messages, have extra newlines. Should remove them.
-    return "Unsafe JavaScript attempt to access frame with URL " + m_url.string() + " from frame with URL " + activeWindowURL.string() + ". Domains, protocols and ports must match.\n";
+    return "Unsafe JavaScript attempt to access frame with URL " + document()->url().string() + " from frame with URL " + activeWindowURL.string() + ". Domains, protocols and ports must match.\n";
 }
 
 bool DOMWindow::isInsecureScriptAccess(DOMWindow* activeWindow, const String& urlString)
@@ -1821,11 +1823,11 @@ Frame* DOMWindow::createWindow(const String& urlString, const AtomicString& fram
     newFrame->loader()->setOpener(openerFrame);
     newFrame->page()->setOpenedByDOM();
 
-    if (newFrame->domWindow()->isInsecureScriptAccess(activeWindow, completedURL))
+    if (newFrame->document()->domWindow()->isInsecureScriptAccess(activeWindow, completedURL))
         return newFrame;
 
     if (function)
-        function(newFrame->domWindow(), functionContext);
+        function(newFrame->document()->domWindow(), functionContext);
 
     if (created)
         newFrame->loader()->changeLocation(activeWindow->securityOrigin(), completedURL, referrer, false, false);
@@ -1873,11 +1875,11 @@ PassRefPtr<DOMWindow> DOMWindow::open(const String& urlString, const AtomicStrin
 
         KURL completedURL = firstFrame->document()->completeURL(urlString);
 
-        if (targetFrame->domWindow()->isInsecureScriptAccess(activeWindow, completedURL))
-            return targetFrame->domWindow();
+        if (targetFrame->document()->domWindow()->isInsecureScriptAccess(activeWindow, completedURL))
+            return targetFrame->document()->domWindow();
 
         if (urlString.isEmpty())
-            return targetFrame->domWindow();
+            return targetFrame->document()->domWindow();
 
         // For whatever reason, Firefox uses the first window rather than the active window to
         // determine the outgoing referrer. We replicate that behavior here.
@@ -1888,7 +1890,7 @@ PassRefPtr<DOMWindow> DOMWindow::open(const String& urlString, const AtomicStrin
             firstFrame->loader()->outgoingReferrer(),
             lockHistory,
             false);
-        return targetFrame->domWindow();
+        return targetFrame->document()->domWindow();
     }
 
     WindowFeatures windowFeatures(windowFeaturesString);
@@ -1902,7 +1904,7 @@ PassRefPtr<DOMWindow> DOMWindow::open(const String& urlString, const AtomicStrin
     windowFeatures.width = windowRect.width();
 
     Frame* result = createWindow(urlString, frameName, windowFeatures, activeWindow, firstFrame, m_frame);
-    return result ? result->domWindow() : 0;
+    return result ? result->document()->domWindow() : 0;
 }
 
 void DOMWindow::showModalDialog(const String& urlString, const String& dialogFeaturesString,

@@ -105,6 +105,7 @@ my $forceChromiumUpdate;
 my $isInspectorFrontend;
 my $isWK2;
 my $shouldTargetWebProcess;
+my $shouldUseXPCServiceForWebProcess;
 my $shouldUseGuardMalloc;
 my $xcodeVersion;
 
@@ -351,7 +352,7 @@ sub determineNumberOfCPUs
     } elsif (isLinux()) {
         # First try the nproc utility, if it exists. If we get no
         # results fall back to just interpretting /proc directly.
-        chomp($numberOfCPUs = `nproc 2> /dev/null`);
+        chomp($numberOfCPUs = `nproc --all 2> /dev/null`);
         if ($numberOfCPUs eq "") {
             $numberOfCPUs = (grep /processor/, `cat /proc/cpuinfo`);
         }
@@ -1441,6 +1442,18 @@ sub determineShouldTargetWebProcess
     $shouldTargetWebProcess = checkForArgumentAndRemoveFromARGV("--target-web-process");
 }
 
+sub shouldUseXPCServiceForWebProcess
+{
+    determineShouldUseXPCServiceForWebProcess();
+    return $shouldUseXPCServiceForWebProcess;
+}
+
+sub determineShouldUseXPCServiceForWebProcess
+{
+    return if defined($shouldUseXPCServiceForWebProcess);
+    $shouldUseXPCServiceForWebProcess = checkForArgumentAndRemoveFromARGV("--use-web-process-xpc-service");
+}
+
 sub debugger
 {
     determineDebugger();
@@ -1480,6 +1493,9 @@ sub setUpGuardMallocIfNeeded
 
     if ($shouldUseGuardMalloc) {
         appendToEnvironmentVariableList("DYLD_INSERT_LIBRARIES", "/usr/lib/libgmalloc.dylib");
+        if (shouldUseXPCServiceForWebProcess()) {
+            appendToEnvironmentVariableList("__XPC_DYLD_INSERT_LIBRARIES", "/usr/lib/libgmalloc.dylib");
+        }
     }
 }
 
@@ -2311,10 +2327,10 @@ sub buildQMakeProjects
     if ($passedConfig =~ m/debug/i) {
         push @buildArgs, "CONFIG-=release";
         push @buildArgs, "CONFIG+=debug";
-    } elsif ($passedConfig =~ m/release/i) {
+    } elsif (!$passedConfig or $passedConfig =~ m/release/i) {
         push @buildArgs, "CONFIG+=release";
         push @buildArgs, "CONFIG-=debug";
-    } elsif ($passedConfig) {
+    } else {
         die "Build type $passedConfig is not supported with --qt.\n";
     }
     push @buildArgs, "CONFIG-=debug_and_release" if ($passedConfig && isDarwin());
@@ -2579,7 +2595,9 @@ sub buildChromium($@)
 
     # We might need to update DEPS or re-run GYP if things have changed.
     if (checkForArgumentAndRemoveFromArrayRef("--update-chromium", \@options)) {
-        system("perl", "Tools/Scripts/update-webkit-chromium", "--force") == 0 or die $!;
+        my @updateCommand = ("perl", "Tools/Scripts/update-webkit-chromium", "--force");
+        push @updateCommand, "--chromium-android" if isChromiumAndroid();
+        system(@updateCommand) == 0 or die $!;
     }
 
     my $result = 1;
@@ -2589,7 +2607,7 @@ sub buildChromium($@)
     } elsif (isCygwin() || isWindows()) {
         # Windows build - builds the root visual studio solution.
         $result = buildChromiumVisualStudioProject("Source/WebKit/chromium/All.sln", $clean);
-    } elsif (isChromiumNinja()) {
+    } elsif (isChromiumNinja() && !isChromiumAndroid()) {
         $result = buildChromiumNinja("all", $clean, @options);
     } elsif (isLinux() || isChromiumAndroid() || isChromiumMacMake()) {
         # Linux build - build using make.
@@ -2598,49 +2616,6 @@ sub buildChromium($@)
         print STDERR "This platform is not supported by chromium.\n";
     }
     return $result;
-}
-
-sub chromiumInstall64BitAndroidLinkerIfNeeded
-{
-    my ($androidNdkRoot) = @_;
-
-    # Resolve the toolchain version through glob().
-    my $linkerDirPrefix = glob("$androidNdkRoot/toolchains/arm-linux-androideabi-*/prebuilt/linux-x86");
-
-    my $linkerDirname1 = "$linkerDirPrefix/bin";
-    my $linkerBasename1 = "arm-linux-androideabi-ld";
-    my $linkerDirname2 = "$linkerDirPrefix/arm-linux-androideabi/bin";
-    my $linkerBasename2 = "ld";
-    my $newLinker = "arm-linux-androideabi-ld.e4df3e0a5bb640ccfa2f30ee67fe9b3146b152d6";
-
-    # Do not continue if the new linker is not (yet) available.
-    if (! -e "third_party/aosp/$newLinker") {
-        return;
-    }
-
-    chromiumReplaceAndroidLinkerIfNeeded($linkerDirname1, $linkerBasename1, $newLinker);
-    chromiumReplaceAndroidLinkerIfNeeded($linkerDirname2, $linkerBasename2, $newLinker);
-}
-
-sub chromiumReplaceAndroidLinkerIfNeeded
-{
-    my ($linkerDirname, $linkerBasename, $newLinker) = @_;
-
-    # If the destination directory does not exist, or the linker has already
-    # been installed, replacing it will not be necessary.
-    if (! -d "$linkerDirname" || -e "$linkerDirname/$newLinker") {
-        return;
-    }
-
-    print "Installing 64-bit Android linker in $linkerDirname..\n";
-    system("cp", "third_party/aosp/$newLinker", "$linkerDirname/$newLinker");
-    system("mv", "$linkerDirname/$linkerBasename", "$linkerDirname/$linkerBasename.orig");
-    system("ln", "-s", "$newLinker", "$linkerDirname/$linkerBasename");
-
-    if (! -e "$linkerDirname/$newLinker") {
-        print "Unable to copy the linker.\n";
-        exit 1;
-    }
 }
 
 sub appleApplicationSupportPath
@@ -2676,15 +2651,16 @@ sub printHelpAndExitForRunAndDebugWebKitAppIfNeeded
 
     print STDERR <<EOF;
 Usage: @{[basename($0)]} [options] [args ...]
-  --help                Show this help message
-  --no-saved-state      Disable application resume for the session on Mac OS 10.7
-  --guard-malloc        Enable Guard Malloc (Mac OS X only)
+  --help                            Show this help message
+  --no-saved-state                  Disable application resume for the session on Mac OS 10.7
+  --guard-malloc                    Enable Guard Malloc (OS X only)
+  --use-web-process-xpc-service     Launch the Web Process as an XPC Service (OS X only)
 EOF
 
     if ($includeOptionsForDebugging) {
         print STDERR <<EOF;
-  --target-web-process  Debug the web process
-  --use-lldb            Use LLDB
+  --target-web-process              Debug the web process
+  --use-lldb                        Use LLDB
 EOF
     }
 
@@ -2707,6 +2683,12 @@ sub runMacWebKitApp($;$)
     $ENV{WEBKIT_UNSET_DYLD_FRAMEWORK_PATH} = "YES";
 
     setUpGuardMallocIfNeeded();
+
+    if (shouldUseXPCServiceForWebProcess()) {
+        $ENV{__XPC_DYLD_FRAMEWORK_PATH} = $productDir;
+        appendToEnvironmentVariableList("__XPC_DYLD_INSERT_LIBRARIES", File::Spec->catfile($productDir, "WebProcessShim.dylib"));
+        $ENV{WEBKIT_USE_XPC_SERVICE_FOR_WEB_PROCESS} = "YES";
+    }
 
     if (defined($useOpenCommand) && $useOpenCommand == USE_OPEN_COMMAND) {
         return system("open", "-W", "-a", $appPath, "--args", argumentsForRunAndDebugMacWebKitApp());
@@ -2745,9 +2727,18 @@ sub execMacWebKitAppForDebugging($)
 
     my @architectureFlags = ($architectureSwitch, architecture());
     if (!shouldTargetWebProcess()) {
+        if (shouldUseXPCServiceForWebProcess()) {
+            $ENV{__XPC_DYLD_FRAMEWORK_PATH} = $productDir;
+            appendToEnvironmentVariableList("__XPC_DYLD_INSERT_LIBRARIES", File::Spec->catfile($productDir, "WebProcessShim.dylib"));
+            $ENV{WEBKIT_USE_XPC_SERVICE_FOR_WEB_PROCESS} = "YES";
+        }
         print "Starting @{[basename($appPath)]} under $debugger with DYLD_FRAMEWORK_PATH set to point to built WebKit in $productDir.\n";
         exec { $debuggerPath } $debuggerPath, @architectureFlags, $argumentsSeparator, $appPath, argumentsForRunAndDebugMacWebKitApp() or die;
     } else {
+        if (shouldUseXPCServiceForWebProcess()) {
+            die "Targetting the Web Process is not compatible with using an XPC Service for the Web Process at this time.";
+        }
+        
         my $webProcessShimPath = File::Spec->catfile($productDir, "WebProcessShim.dylib");
         my $webProcessPath = File::Spec->catdir($productDir, "WebProcess.app");
         my $webKit2ExecutablePath = File::Spec->catfile($productDir, "WebKit2.framework", "WebKit2");

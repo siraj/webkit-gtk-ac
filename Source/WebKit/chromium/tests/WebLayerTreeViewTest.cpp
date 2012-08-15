@@ -24,37 +24,23 @@
 
 #include "config.h"
 
-#include "platform/WebLayerTreeView.h"
+#include <public/WebLayerTreeView.h>
 
 #include "CompositorFakeWebGraphicsContext3D.h"
-#include "WebCompositor.h"
-#include "public/WebLayer.h"
-#include "public/WebLayerTreeViewClient.h"
-#include "public/WebThread.h"
+#include "FakeWebCompositorOutputSurface.h"
+#include "WebLayerTreeViewTestCommon.h"
 #include <gmock/gmock.h>
 #include <public/Platform.h>
+#include <public/WebCompositor.h>
+#include <public/WebLayer.h>
+#include <public/WebLayerTreeViewClient.h>
+#include <public/WebThread.h>
 
 using namespace WebKit;
 using testing::Mock;
 using testing::Test;
 
 namespace {
-
-class MockWebLayerTreeViewClient : public WebLayerTreeViewClient {
-public:
-    virtual void scheduleComposite() OVERRIDE { }
-    virtual void updateAnimations(double frameBeginTime) OVERRIDE { }
-    MOCK_METHOD0(willBeginFrame, void());
-    MOCK_METHOD0(didBeginFrame, void());
-    virtual void layout() OVERRIDE { }
-    virtual void applyScrollAndScale(const WebSize& scrollDelta, float scaleFactor) OVERRIDE { }
-    virtual WebGraphicsContext3D* createContext3D() OVERRIDE { return CompositorFakeWebGraphicsContext3D::create(WebGraphicsContext3D::Attributes()).leakPtr(); }
-    virtual void didRebindGraphicsContext(bool success) OVERRIDE { }
-    MOCK_METHOD0(willCommit, void());
-    MOCK_METHOD0(didCommit, void());
-    virtual void didCommitAndDrawFrame() OVERRIDE { }
-    virtual void didCompleteSwapBuffers() OVERRIDE { }
-};
 
 class MockWebLayerTreeViewClientForThreadedTests : public MockWebLayerTreeViewClient {
 public:

@@ -34,11 +34,12 @@
 #if ENABLE(MEDIA_SOURCE)
 
 #include "EventTarget.h"
-#include "SourceBuffer.h"
 #include <wtf/RefCounted.h>
 #include <wtf/Vector.h>
 
 namespace WebCore {
+
+class SourceBuffer;
 
 class SourceBufferList : public RefCounted<SourceBufferList>, public EventTarget {
 public:
@@ -55,6 +56,10 @@ public:
     bool remove(SourceBuffer*);
     void clear();
 
+    // Generates an id for adding a new SourceBuffer. Returns an empty string
+    // if this SourceBufferList is full.
+    String generateUniqueId();
+
     // EventTarget interface
     virtual const AtomicString& interfaceName() const OVERRIDE;
     virtual ScriptExecutionContext* scriptExecutionContext() const OVERRIDE;
@@ -69,6 +74,7 @@ protected:
 private:
     explicit SourceBufferList(ScriptExecutionContext*);
 
+    bool contains(size_t id) const;
     void createAndFireEvent(const AtomicString&);
 
     virtual void refEventTarget() OVERRIDE { ref(); }
@@ -78,6 +84,7 @@ private:
     ScriptExecutionContext* m_scriptExecutionContext;
 
     Vector<RefPtr<SourceBuffer> > m_list;
+    size_t m_lastSourceBufferId;
 };
 
 } // namespace WebCore

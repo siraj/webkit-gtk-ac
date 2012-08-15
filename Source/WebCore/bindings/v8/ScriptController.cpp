@@ -32,7 +32,7 @@
 #include "config.h"
 #include "ScriptController.h"
 
-#include "PlatformSupport.h"
+#include "BindingState.h"
 #include "Document.h"
 #include "ScriptCallStack.h"
 #include "ScriptCallStackFactory.h"
@@ -49,13 +49,12 @@
 #include "npruntime_impl.h"
 #include "npruntime_priv.h"
 #include "NPV8Object.h"
+#include "PlatformSupport.h"
 #include "ScriptSourceCode.h"
 #include "SecurityOrigin.h"
 #include "Settings.h"
 #include "UserGestureIndicator.h"
 #include "V8Binding.h"
-#include "V8BindingMacros.h"
-#include "V8BindingState.h"
 #include "V8DOMWindow.h"
 #include "V8Event.h"
 #include "V8HiddenPropertyName.h"
@@ -87,17 +86,17 @@ void ScriptController::setFlags(const char* string, int length)
 
 Frame* ScriptController::retrieveFrameForEnteredContext()
 {
-    return V8Proxy::retrieveFrameForEnteredContext();
+    return firstFrame(BindingState::instance());
 }
 
 Frame* ScriptController::retrieveFrameForCurrentContext()
 {
-    return V8Proxy::retrieveFrameForCurrentContext();
+    return currentFrame(BindingState::instance());
 }
 
 bool ScriptController::canAccessFromCurrentOrigin(Frame *frame)
 {
-    return !v8::Context::InContext() || V8BindingSecurity::canAccessFrame(V8BindingState::Only(), frame, true);
+    return !v8::Context::InContext() || BindingSecurity::shouldAllowAccessToFrame(BindingState::instance(), frame);
 }
 
 ScriptController::ScriptController(Frame* frame)
@@ -173,7 +172,58 @@ void ScriptController::evaluateInIsolatedWorld(unsigned worldID, const Vector<Sc
 void ScriptController::evaluateInIsolatedWorld(unsigned worldID, const Vector<ScriptSourceCode>& sources, int extensionGroup, Vector<ScriptValue>* results)
 {
     v8::HandleScope handleScope;
-    v8::Local<v8::Array> v8Results = m_proxy->evaluateInIsolatedWorld(worldID, sources, extensionGroup);
+
+    // FIXME: This will need to get reorganized once we have a windowShell for the isolated world.
+    if (!windowShell()->initContextIfNeeded())
+        return;
+
+    v8::Local<v8::Array> v8Results;
+    {
+        v8::HandleScope evaluateHandleScope;
+        V8IsolatedContext* isolatedContext = 0;
+        if (worldID > 0) {
+            IsolatedWorldMap::iterator iter = m_proxy->isolatedWorlds().find(worldID);
+            if (iter != m_proxy->isolatedWorlds().end())
+                isolatedContext = iter->second;
+            else {
+                isolatedContext = new V8IsolatedContext(proxy(), extensionGroup, worldID);
+                if (isolatedContext->context().IsEmpty()) {
+                    delete isolatedContext;
+                    return;
+                }
+
+                // FIXME: We should change this to using window shells to match JSC.
+                m_proxy->isolatedWorlds().set(worldID, isolatedContext);
+            }
+
+            IsolatedWorldSecurityOriginMap::iterator securityOriginIter = m_proxy->isolatedWorldSecurityOrigins().find(worldID);
+            if (securityOriginIter != m_proxy->isolatedWorldSecurityOrigins().end())
+                isolatedContext->setSecurityOrigin(securityOriginIter->second);
+        } else {
+            isolatedContext = new V8IsolatedContext(proxy(), extensionGroup, worldID);
+            if (isolatedContext->context().IsEmpty()) {
+                delete isolatedContext;
+                return;
+            }
+        }
+
+        v8::Local<v8::Context> context = v8::Local<v8::Context>::New(isolatedContext->context());
+        v8::Context::Scope contextScope(context);
+        v8::Local<v8::Array> resultArray = v8::Array::New(sources.size());
+
+        for (size_t i = 0; i < sources.size(); ++i) {
+            v8::Local<v8::Value> evaluationResult = m_proxy->evaluate(sources[i], 0);
+            if (evaluationResult.IsEmpty())
+                evaluationResult = v8::Local<v8::Value>::New(v8::Undefined());
+            resultArray->Set(i, evaluationResult);
+        }
+
+        if (!worldID)
+            isolatedContext->destroy();
+
+        v8Results = evaluateHandleScope.Close(resultArray);
+    }
+
     if (results && !v8Results.IsEmpty()) {
         for (size_t i = 0; i < v8Results->Length(); ++i)
             results->append(ScriptValue(v8Results->Get(i)));
@@ -182,7 +232,11 @@ void ScriptController::evaluateInIsolatedWorld(unsigned worldID, const Vector<Sc
 
 void ScriptController::setIsolatedWorldSecurityOrigin(int worldID, PassRefPtr<SecurityOrigin> securityOrigin)
 {
-    m_proxy->setIsolatedWorldSecurityOrigin(worldID, securityOrigin);
+    ASSERT(worldID);
+    m_proxy->isolatedWorldSecurityOrigins().set(worldID, securityOrigin);
+    IsolatedWorldMap::iterator iter = m_proxy->isolatedWorlds().find(worldID);
+    if (iter != m_proxy->isolatedWorlds().end())
+        iter->second->setSecurityOrigin(securityOrigin);
 }
 
 // Evaluate a script file in the environment of this proxy.
@@ -274,8 +328,6 @@ bool ScriptController::haveInterpreter() const
 
 void ScriptController::enableEval()
 {
-    // We don't call initContextIfNeeded because contexts have eval enabled by default.
-
     v8::HandleScope handleScope;
     v8::Handle<v8::Context> v8Context = proxy()->windowShell()->context();
     if (v8Context.IsEmpty())
@@ -286,9 +338,6 @@ void ScriptController::enableEval()
 
 void ScriptController::disableEval()
 {
-    if (!proxy()->windowShell()->initContextIfNeeded())
-        return;
-
     v8::HandleScope handleScope;
     v8::Handle<v8::Context> v8Context = proxy()->windowShell()->context();
     if (v8Context.IsEmpty())
@@ -379,7 +428,7 @@ static NPObject* createScriptObject(Frame* frame)
         return createNoScriptObject();
 
     v8::Context::Scope scope(v8Context);
-    DOMWindow* window = frame->domWindow();
+    DOMWindow* window = frame->document()->domWindow();
     v8::Handle<v8::Value> global = toV8(window);
     ASSERT(global->IsObject());
     return npCreateV8ScriptObject(0, v8::Handle<v8::Object>::Cast(global), window);
@@ -419,7 +468,7 @@ NPObject* ScriptController::createScriptObjectForPluginElement(HTMLPlugInElement
         return createNoScriptObject();
     v8::Context::Scope scope(v8Context);
 
-    DOMWindow* window = m_frame->domWindow();
+    DOMWindow* window = m_frame->document()->domWindow();
     v8::Handle<v8::Value> v8plugin = toV8(static_cast<HTMLEmbedElement*>(plugin));
     if (!v8plugin->IsObject())
         return createNoScriptObject();
@@ -428,7 +477,7 @@ NPObject* ScriptController::createScriptObjectForPluginElement(HTMLPlugInElement
 }
 
 
-void ScriptController::clearWindowShell(bool)
+void ScriptController::clearWindowShell(DOMWindow*, bool)
 {
     // V8 binding expects ScriptController::clearWindowShell only be called
     // when a frame is loading a new page. V8Proxy::clearForNavigation
@@ -444,7 +493,17 @@ void ScriptController::setCaptureCallStackForUncaughtExceptions(bool value)
 
 void ScriptController::collectIsolatedContexts(Vector<std::pair<ScriptState*, SecurityOrigin*> >& result)
 {
-    m_proxy->collectIsolatedContexts(result);
+    v8::HandleScope handleScope;
+    for (IsolatedWorldMap::iterator it = m_proxy->isolatedWorlds().begin(); it != m_proxy->isolatedWorlds().end(); ++it) {
+        V8IsolatedContext* isolatedContext = it->second;
+        if (!isolatedContext->securityOrigin())
+            continue;
+        v8::Handle<v8::Context> v8Context = isolatedContext->context();
+        if (v8Context.IsEmpty())
+            continue;
+        ScriptState* scriptState = ScriptState::forContext(v8::Local<v8::Context>::New(v8Context));
+        result.append(std::pair<ScriptState*, SecurityOrigin*>(scriptState, isolatedContext->securityOrigin()));
+    }
 }
 #endif
 

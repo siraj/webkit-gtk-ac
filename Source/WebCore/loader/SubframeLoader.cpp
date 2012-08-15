@@ -104,11 +104,47 @@ bool SubframeLoader::resourceWillUsePlugin(const String& url, const String& mime
     return shouldUsePlugin(completedURL, mimeType, shouldPreferPlugInsForImages, false, useFallback);
 }
 
-bool SubframeLoader::requestPlugin(HTMLPlugInImageElement* ownerElement, const KURL& url, const String& mimeType, const Vector<String>& paramNames, const Vector<String>& paramValues, bool useFallback)
+bool SubframeLoader::pluginIsLoadable(HTMLPlugInImageElement* pluginElement, const KURL& url, const String& mimeType)
 {
     Settings* settings = m_frame->settings();
     if (!settings)
         return false;
+
+    if (MIMETypeRegistry::isJavaAppletMIMEType(mimeType)) {
+        if (!settings->isJavaEnabled())
+            return false;
+        if (document() && document()->securityOrigin()->isLocal() && !settings->isJavaEnabledForLocalFiles())
+            return false;
+    }
+
+    if (document()) {
+        if (document()->isSandboxed(SandboxPlugins))
+            return false;
+
+        if (!document()->securityOrigin()->canDisplay(url)) {
+            FrameLoader::reportLocalLoadFailed(m_frame, url.string());
+            return false;
+        }
+
+        String declaredMimeType = document()->isPluginDocument() && document()->ownerElement() ?
+            document()->ownerElement()->fastGetAttribute(HTMLNames::typeAttr) :
+            pluginElement->fastGetAttribute(HTMLNames::typeAttr);
+        if (!document()->contentSecurityPolicy()->allowObjectFromSource(url)
+            || !document()->contentSecurityPolicy()->allowPluginType(mimeType, declaredMimeType, url)) {
+            RenderEmbeddedObject* renderer = pluginElement->renderEmbeddedObject();
+            renderer->setPluginUnavailabilityReason(RenderEmbeddedObject::PluginBlockedByContentSecurityPolicy);
+            return false;
+        }
+
+        if (m_frame->loader() && !m_frame->loader()->checkIfRunInsecureContent(document()->securityOrigin(), url))
+            return false;
+    }
+
+    return true;
+}
+
+bool SubframeLoader::requestPlugin(HTMLPlugInImageElement* ownerElement, const KURL& url, const String& mimeType, const Vector<String>& paramNames, const Vector<String>& paramValues, bool useFallback)
+{
 
     // Application plug-ins are plug-ins implemented by the user agent, for example Qt plug-ins,
     // as opposed to third-party code such as Flash. The user agent decides whether or not they are
@@ -116,19 +152,8 @@ bool SubframeLoader::requestPlugin(HTMLPlugInImageElement* ownerElement, const K
     if ((!allowPlugins(AboutToInstantiatePlugin) && !MIMETypeRegistry::isApplicationPluginMIMEType(mimeType)))
         return false;
 
-    if (MIMETypeRegistry::isJavaAppletMIMEType(mimeType)) {
-        if (!settings->isJavaEnabled())
-            return false;
-        if (m_frame->document() && m_frame->document()->securityOrigin()->isLocal() && !settings->isJavaEnabledForLocalFiles())
-            return false;
-    }
-
-    if (m_frame->document()) {
-        if (m_frame->document()->isSandboxed(SandboxPlugins))
-            return false;
-        if (!m_frame->document()->contentSecurityPolicy()->allowObjectFromSource(url))
-            return false;
-    }
+    if (!pluginIsLoadable(ownerElement, url, mimeType))
+        return false;
 
     ASSERT(ownerElement->hasTagName(objectTag) || ownerElement->hasTagName(embedTag));
     return loadPlugin(ownerElement, url, mimeType, paramNames, paramValues, useFallback);
@@ -272,7 +297,9 @@ PassRefPtr<Widget> SubframeLoader::createJavaAppletWidget(const IntSize& size, H
             return 0;
         }
 
-        if (!element->document()->contentSecurityPolicy()->allowObjectFromSource(codeBaseURL))
+        const char javaAppletMimeType[] = "application/x-java-applet";
+        if (!element->document()->contentSecurityPolicy()->allowObjectFromSource(codeBaseURL)
+            || !element->document()->contentSecurityPolicy()->allowPluginType(javaAppletMimeType, javaAppletMimeType, codeBaseURL))
             return 0;
     }
 
@@ -416,21 +443,9 @@ bool SubframeLoader::loadPlugin(HTMLPlugInImageElement* pluginElement, const KUR
     if (!renderer || useFallback)
         return false;
 
-    if (!document()->securityOrigin()->canDisplay(url)) {
-        FrameLoader::reportLocalLoadFailed(m_frame, url.string());
-        return false;
-    }
-
-    if (!document()->contentSecurityPolicy()->allowObjectFromSource(url))
-        return false;
-
-    FrameLoader* frameLoader = m_frame->loader();
-    if (!frameLoader->checkIfRunInsecureContent(document()->securityOrigin(), url))
-        return false;
-
     IntSize contentSize = roundedIntSize(LayoutSize(renderer->contentWidth(), renderer->contentHeight()));
     bool loadManually = document()->isPluginDocument() && !m_containsPlugins && toPluginDocument(document())->shouldLoadPluginManually();
-    RefPtr<Widget> widget = frameLoader->client()->createPlugin(contentSize,
+    RefPtr<Widget> widget = m_frame->loader()->client()->createPlugin(contentSize,
         pluginElement, url, paramNames, paramValues, mimeType, loadManually);
 
     if (!widget) {

@@ -89,7 +89,7 @@ namespace WebCore {
 
 static GlobalHandleMap& currentGlobalHandleMap()
 {
-    return V8BindingPerIsolateData::current()->globalHandleMap();
+    return V8PerIsolateData::current()->globalHandleMap();
 }
 
 // The function is the place to set the break point to inspect
@@ -418,7 +418,7 @@ void V8GCController::gcPrologue()
     grouperVisitor.applyGrouping();
 
     // Clean single element cache for string conversions.
-    V8BindingPerIsolateData* data = V8BindingPerIsolateData::current();
+    V8PerIsolateData* data = V8PerIsolateData::current();
     data->stringCache()->clearOnGC();
 }
 
@@ -519,5 +519,15 @@ void V8GCController::checkMemoryUsage()
 #endif
 }
 
+void V8GCController::collectGarbageIfNecessary()
+{
+    V8PerIsolateData* data = V8PerIsolateData::current();
+    if (!data->shouldCollectGarbageSoon())
+        return;
+    const int longIdlePauseInMS = 1000;
+    data->clearShouldCollectGarbageSoon();
+    v8::V8::ContextDisposedNotification();
+    v8::V8::IdleNotification(longIdlePauseInMS);
+}
 
 }  // namespace WebCore

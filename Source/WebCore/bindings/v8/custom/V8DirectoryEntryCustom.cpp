@@ -36,7 +36,6 @@
 #include "DirectoryEntry.h"
 #include "ExceptionCode.h"
 #include "V8Binding.h"
-#include "V8BindingMacros.h"
 #include "V8EntryCallback.h"
 #include "V8ErrorCallback.h"
 #include "V8Proxy.h"
@@ -51,12 +50,12 @@ v8::Handle<v8::Value> V8DirectoryEntry::getDirectoryCallback(const v8::Arguments
     DirectoryEntry* imp = V8DirectoryEntry::toNative(args.Holder());
 
     if (args.Length() < 1)
-        return V8Proxy::throwNotEnoughArgumentsError(args.GetIsolate());
+        return throwNotEnoughArgumentsError(args.GetIsolate());
 
     STRING_TO_V8PARAMETER_EXCEPTION_BLOCK(V8Parameter<WithUndefinedOrNullCheck>, path, args[0]);
     if (args.Length() <= 1) {
         imp->getDirectory(path);
-        return v8::Handle<v8::Value>();
+        return v8Undefined();
     }
     RefPtr<WebKitFlags> flags;
     if (!isUndefinedOrNull(args[1]) && args[1]->IsObject()) {
@@ -76,17 +75,17 @@ v8::Handle<v8::Value> V8DirectoryEntry::getDirectoryCallback(const v8::Arguments
     RefPtr<EntryCallback> successCallback;
     if (args.Length() > 2 && !args[2]->IsNull() && !args[2]->IsUndefined()) {
         if (!args[2]->IsObject())
-            return throwError(TYPE_MISMATCH_ERR, args.GetIsolate());
+            return setDOMException(TYPE_MISMATCH_ERR, args.GetIsolate());
         successCallback = V8EntryCallback::create(args[2], getScriptExecutionContext());
     }
     RefPtr<ErrorCallback> errorCallback;
     if (args.Length() > 3 && !args[3]->IsNull() && !args[3]->IsUndefined()) {
         if (!args[3]->IsObject())
-            return throwError(TYPE_MISMATCH_ERR, args.GetIsolate());
+            return setDOMException(TYPE_MISMATCH_ERR, args.GetIsolate());
         errorCallback = V8ErrorCallback::create(args[3], getScriptExecutionContext());
     }
     imp->getDirectory(path, flags, successCallback, errorCallback);
-    return v8::Handle<v8::Value>();
+    return v8Undefined();
 }
 
 v8::Handle<v8::Value> V8DirectoryEntry::getFileCallback(const v8::Arguments& args)
@@ -95,12 +94,12 @@ v8::Handle<v8::Value> V8DirectoryEntry::getFileCallback(const v8::Arguments& arg
     DirectoryEntry* imp = V8DirectoryEntry::toNative(args.Holder());
 
     if (args.Length() < 1)
-        return V8Proxy::throwNotEnoughArgumentsError(args.GetIsolate());
+        return throwNotEnoughArgumentsError(args.GetIsolate());
 
     STRING_TO_V8PARAMETER_EXCEPTION_BLOCK(V8Parameter<WithUndefinedOrNullCheck>, path, args[0]);
     if (args.Length() <= 1) {
         imp->getFile(path);
-        return v8::Handle<v8::Value>();
+        return v8Undefined();
     }
     RefPtr<WebKitFlags> flags;
     if (!isUndefinedOrNull(args[1]) && args[1]->IsObject()) {
@@ -120,17 +119,17 @@ v8::Handle<v8::Value> V8DirectoryEntry::getFileCallback(const v8::Arguments& arg
     RefPtr<EntryCallback> successCallback;
     if (args.Length() > 2 && !args[2]->IsNull() && !args[2]->IsUndefined()) {
         if (!args[2]->IsObject())
-            return throwError(TYPE_MISMATCH_ERR, args.GetIsolate());
+            return setDOMException(TYPE_MISMATCH_ERR, args.GetIsolate());
         successCallback = V8EntryCallback::create(args[2], getScriptExecutionContext());
     }
     RefPtr<ErrorCallback> errorCallback;
     if (args.Length() > 3 && !args[3]->IsNull() && !args[3]->IsUndefined()) {
         if (!args[3]->IsObject())
-            return throwError(TYPE_MISMATCH_ERR, args.GetIsolate());
+            return setDOMException(TYPE_MISMATCH_ERR, args.GetIsolate());
         errorCallback = V8ErrorCallback::create(args[3], getScriptExecutionContext());
     }
     imp->getFile(path, flags, successCallback, errorCallback);
-    return v8::Handle<v8::Value>();
+    return v8Undefined();
 }
 
 

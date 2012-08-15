@@ -5,7 +5,6 @@ LIST(APPEND WebKit2_LINK_FLAGS
     ${EFLDEPS_LDFLAGS}
     ${EFREET_LDFLAGS}
     ${EVAS_LDFLAGS}
-    ${LIBSOUP24_LDFLAGS}
 )
 
 LIST(APPEND WebKit2_SOURCES
@@ -33,14 +32,19 @@ LIST(APPEND WebKit2_SOURCES
     Shared/soup/WebCoreArgumentCodersSoup.cpp
 
     UIProcess/API/C/efl/WKView.cpp
+    
+    UIProcess/API/cpp/efl/WKEinaSharedString.cpp
 
     UIProcess/API/C/soup/WKContextSoup.cpp
     UIProcess/API/C/soup/WKSoupRequestManager.cpp
 
     UIProcess/API/efl/BatteryProvider.cpp
+    UIProcess/API/efl/EflViewportHandler.cpp
     UIProcess/API/efl/NetworkInfoProvider.cpp
     UIProcess/API/efl/PageClientImpl.cpp
     UIProcess/API/efl/VibrationProvider.cpp
+    UIProcess/API/efl/ewk_back_forward_list.cpp
+    UIProcess/API/efl/ewk_back_forward_list_item.cpp
     UIProcess/API/efl/ewk_context.cpp
     UIProcess/API/efl/ewk_context_download_client.cpp
     UIProcess/API/efl/ewk_context_request_manager_client.cpp
@@ -55,10 +59,12 @@ LIST(APPEND WebKit2_SOURCES
     UIProcess/API/efl/ewk_url_response.cpp
     UIProcess/API/efl/ewk_url_scheme_request.cpp
     UIProcess/API/efl/ewk_view.cpp
+    UIProcess/API/efl/ewk_view_find_client.cpp
     UIProcess/API/efl/ewk_view_form_client.cpp
     UIProcess/API/efl/ewk_view_loader_client.cpp
     UIProcess/API/efl/ewk_view_policy_client.cpp
     UIProcess/API/efl/ewk_view_resource_load_client.cpp
+    UIProcess/API/efl/ewk_view_ui_client.cpp
     UIProcess/API/efl/ewk_web_error.cpp
     UIProcess/API/efl/ewk_web_resource.cpp
 
@@ -76,7 +82,6 @@ LIST(APPEND WebKit2_SOURCES
     UIProcess/soup/WebSoupRequestManagerProxy.cpp
 
     UIProcess/Launcher/efl/ProcessLauncherEfl.cpp
-    UIProcess/Launcher/efl/ThreadLauncherEfl.cpp
 
     UIProcess/Plugins/unix/PluginInfoStoreUnix.cpp
 
@@ -119,6 +124,7 @@ LIST(APPEND WebKit2_INCLUDE_DIRECTORIES
     "${WEBKIT2_DIR}/Shared/soup"
     "${WEBKIT2_DIR}/UIProcess/API/C/efl"
     "${WEBKIT2_DIR}/UIProcess/API/C/soup"
+    "${WEBKIT2_DIR}/UIProcess/API/cpp/efl"
     "${WEBKIT2_DIR}/UIProcess/API/efl"
     "${WEBKIT2_DIR}/UIProcess/soup"
     "${WEBKIT2_DIR}/WebProcess/Downloads/soup"
@@ -135,8 +141,8 @@ LIST(APPEND WebKit2_INCLUDE_DIRECTORIES
     ${LIBXML2_INCLUDE_DIR}
     ${LIBXSLT_INCLUDE_DIRS}
     ${SQLITE_INCLUDE_DIRS}
-    ${Glib_INCLUDE_DIRS}
-    ${LIBSOUP24_INCLUDE_DIRS}
+    ${GLIB_INCLUDE_DIRS}
+    ${LIBSOUP_INCLUDE_DIRS}
     ${WTF_DIR}
 )
 
@@ -147,13 +153,16 @@ LIST(APPEND WebKit2_LIBRARIES
     ${EFREET_LIBRARIES}
     ${Freetype_LIBRARIES}
     ${LIBXML2_LIBRARIES}
+    ${OPENGL_LIBRARIES}
     ${SQLITE_LIBRARIES}
     ${FONTCONFIG_LIBRARIES}
     ${PNG_LIBRARY}
     ${JPEG_LIBRARY}
     ${CMAKE_DL_LIBS}
-    ${Glib_LIBRARIES}
-    ${LIBSOUP24_LIBRARIES}
+    ${GLIB_LIBRARIES}
+    ${GLIB_GIO_LIBRARIES}
+    ${GLIB_GOBJECT_LIBRARIES}
+    ${LIBSOUP_LIBRARIES}
 )
 
 LIST (APPEND WebProcess_SOURCES
@@ -168,6 +177,7 @@ LIST (APPEND WebProcess_LIBRARIES
     ${EVAS_LIBRARIES}
     ${LIBXML2_LIBRARIES}
     ${LIBXSLT_LIBRARIES}
+    ${OPENGL_LIBRARIES}
     ${SQLITE_LIBRARIES}
 )
 
@@ -186,6 +196,8 @@ SET(ForwardingNetworkHeaders_NAME forwarding-headerSoup)
 CONFIGURE_FILE(efl/ewebkit2.pc.in ${CMAKE_BINARY_DIR}/WebKit2/efl/ewebkit2.pc @ONLY)
 SET (EWebKit2_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/UIProcess/API/efl/EWebKit2.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/UIProcess/API/efl/ewk_back_forward_list.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/UIProcess/API/efl/ewk_back_forward_list_item.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/UIProcess/API/efl/ewk_context.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/UIProcess/API/efl/ewk_cookie_manager.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/UIProcess/API/efl/ewk_download_job.h"
@@ -216,14 +228,17 @@ SET(EWK2UnitTests_LIBRARIES
     ${ECORE_LIBRARIES}
     ${ECORE_EVAS_LIBRARIES}
     ${EVAS_LIBRARIES}
-    ${LIBSOUP24_LIBRARIES}
+    ${GLIB_LIBRARIES}
+    ${GLIB_GIO_LIBRARIES}
+    ${GLIB_GOBJECT_LIBRARIES}
+    ${LIBSOUP_LIBRARIES}
     gtest
 )
 
 IF (ENABLE_GLIB_SUPPORT)
     LIST(APPEND EWK2UnitTests_LIBRARIES
-        ${Glib_LIBRARIES}
-        ${Gthread_LIBRARIES}
+        ${GLIB_LIBRARIES}
+        ${GLIB_GTHREAD_LIBRARIES}
     )
 ENDIF()
 

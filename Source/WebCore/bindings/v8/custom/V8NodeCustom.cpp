@@ -31,14 +31,13 @@
 #include "config.h"
 #include "Node.h"
 
+#include "BindingState.h"
 #include "Document.h"
 #include "EventListener.h"
 #include "ShadowRoot.h"
-
 #include "V8AbstractEventListener.h"
 #include "V8Attr.h"
 #include "V8Binding.h"
-#include "V8BindingState.h"
 #include "V8CDATASection.h"
 #include "V8Comment.h"
 #include "V8Document.h"
@@ -54,12 +53,11 @@
 #include "V8ProcessingInstruction.h"
 #include "V8Proxy.h"
 #include "V8Text.h"
+#include <wtf/RefPtr.h>
 
 #if ENABLE(SVG)
 #include "V8SVGElement.h"
 #endif
-
-#include <wtf/RefPtr.h>
 
 namespace WebCore {
 
@@ -74,7 +72,7 @@ v8::Handle<v8::Value> V8Node::insertBeforeCallback(const v8::Arguments& args)
     Node* refChild = V8Node::HasInstance(args[1]) ? V8Node::toNative(v8::Handle<v8::Object>::Cast(args[1])) : 0;
     bool success = imp->insertBefore(newChild, refChild, ec, true);
     if (ec)
-        return V8Proxy::setDOMException(ec, args.GetIsolate());
+        return setDOMException(ec, args.GetIsolate());
     if (success)
         return args[0];
     return v8::Null(args.GetIsolate());
@@ -91,7 +89,7 @@ v8::Handle<v8::Value> V8Node::replaceChildCallback(const v8::Arguments& args)
     Node* oldChild = V8Node::HasInstance(args[1]) ? V8Node::toNative(v8::Handle<v8::Object>::Cast(args[1])) : 0;
     bool success = imp->replaceChild(newChild, oldChild, ec, true);
     if (ec)
-        return V8Proxy::setDOMException(ec, args.GetIsolate());
+        return setDOMException(ec, args.GetIsolate());
     if (success)
         return args[1];
     return v8::Null(args.GetIsolate());
@@ -106,7 +104,7 @@ v8::Handle<v8::Value> V8Node::removeChildCallback(const v8::Arguments& args)
     Node* oldChild = V8Node::HasInstance(args[0]) ? V8Node::toNative(v8::Handle<v8::Object>::Cast(args[0])) : 0;
     bool success = imp->removeChild(oldChild, ec);
     if (ec)
-        return V8Proxy::setDOMException(ec, args.GetIsolate());
+        return setDOMException(ec, args.GetIsolate());
     if (success)
         return args[0];
     return v8::Null(args.GetIsolate());
@@ -122,7 +120,7 @@ v8::Handle<v8::Value> V8Node::appendChildCallback(const v8::Arguments& args)
     Node* newChild = V8Node::HasInstance(args[0]) ? V8Node::toNative(v8::Handle<v8::Object>::Cast(args[0])) : 0;
     bool success = imp->appendChild(newChild, ec, true );
     if (ec)
-        return V8Proxy::setDOMException(ec, args.GetIsolate());
+        return setDOMException(ec, args.GetIsolate());
     if (success)
         return args[0];
     return v8::Null(args.GetIsolate());

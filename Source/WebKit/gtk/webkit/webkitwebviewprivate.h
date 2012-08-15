@@ -41,6 +41,10 @@
 #include "UserMediaClientGtk.h"
 #endif
 
+#if ENABLE(REGISTER_PROTOCOL_HANDLER)
+#include "RegisterProtocolHandlerClientGtk.h"
+#endif
+
 namespace WebKit {
 WebCore::Page* core(WebKitWebView*);
 WebKitWebView* kit(WebCore::Page*);
@@ -118,6 +122,10 @@ struct _WebKitWebViewPrivate {
 
 #if ENABLE(GEOLOCATION)
     OwnPtr<WebCore::GeolocationClientMock> geolocationClientMock;
+#endif
+
+#if ENABLE(REGISTER_PROTOCOL_HANDLER)
+    OwnPtr<WebKit::RegisterProtocolHandlerClient> registerProtocolHandlerClient;
 #endif
 };
 

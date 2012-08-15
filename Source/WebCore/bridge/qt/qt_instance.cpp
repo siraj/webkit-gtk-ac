@@ -44,9 +44,6 @@ namespace Bindings {
 typedef QMultiHash<void*, QtInstance*> QObjectInstanceMap;
 static QObjectInstanceMap cachedInstances;
 
-// Used for implementing '__qt_sender__'.
-Q_GLOBAL_STATIC(QtInstance::QtSenderStack, senderStack)
-
 // Derived RuntimeObject
 class QtRuntimeObject : public RuntimeObject {
 public:
@@ -97,7 +94,7 @@ QtInstance::~QtInstance()
 
     cachedInstances.remove(m_hashkey);
 
-    // clean up (unprotect from gc) the JSValues we've created
+    qDeleteAll(m_methods);
     m_methods.clear();
 
     qDeleteAll(m_fields);
@@ -150,16 +147,6 @@ void QtInstance::put(JSObject* object, ExecState* exec, PropertyName propertyNam
     JSObject::put(object, exec, propertyName, value, slot);
 }
 
-void QtInstance::removeUnusedMethods()
-{
-    for (QHash<QByteArray, QtWeakObjectReference>::Iterator it = m_methods.begin(), end = m_methods.end(); it != end; ) {
-        if (!it.value().get())
-            it = m_methods.erase(it);
-        else
-            ++it;
-    }
-}
-
 QtInstance* QtInstance::getInstance(JSObject* object)
 {
     if (!object)
@@ -182,6 +169,7 @@ Class* QtInstance::getClass() const
 RuntimeObject* QtInstance::newRuntimeObject(ExecState* exec)
 {
     JSLockHolder lock(exec);
+    qDeleteAll(m_methods);
     m_methods.clear();
     return QtRuntimeObject::create(exec, exec->lexicalGlobalObject(), this);
 }
@@ -223,12 +211,8 @@ void QtInstance::getPropertyNames(ExecState* exec, PropertyNameArray& array)
         for (i = 0; i < methodCount; i++) {
             QMetaMethod method = meta->method(i);
             if (method.access() != QMetaMethod::Private) {
-#if HAVE(QT5)
                 QByteArray sig = method.methodSignature();
                 array.add(Identifier(exec, UString(sig.constData(), sig.length())));
-#else
-                array.add(Identifier(exec, method.signature()));
-#endif
             }
         }
     }
@@ -275,7 +259,6 @@ JSValue QtInstance::stringValue(ExecState* exec) const
             // Check to see how much we can call it
             if (m.access() != QMetaMethod::Private
                 && m.methodType() != QMetaMethod::Signal
-#if HAVE(QT5)
                 && m.parameterCount() == 0
                 && m.returnType() != QMetaType::Void) {
                 QVariant ret(m.returnType(), (void*)0);
@@ -286,20 +269,6 @@ JSValue QtInstance::stringValue(ExecState* exec) const
                     if (ret.isValid() && ret.canConvert(QVariant::String)) {
                         buf = ret.toString().toLatin1().constData(); // ### Latin 1? Ascii?
                         useDefault = false;
-#else
-                && m.parameterTypes().isEmpty()) {
-                const char* retsig = m.typeName();
-                if (retsig && *retsig) {
-                    QVariant ret(QMetaType::type(retsig), (void*)0);
-                    void * qargs[1];
-                    qargs[0] = ret.data();
-
-                    if (QMetaObject::metacall(obj, QMetaObject::InvokeMetaMethod, index, qargs) < 0) {
-                        if (ret.isValid() && ret.canConvert(QVariant::String)) {
-                            buf = ret.toString().toLatin1().constData(); // ### Latin 1? Ascii?
-                            useDefault = false;
-                        }
-#endif
                     }
                 }
             }
@@ -331,11 +300,6 @@ JSValue QtInstance::booleanValue() const
 JSValue QtInstance::valueOf(ExecState* exec) const
 {
     return stringValue(exec);
-}
-
-QtInstance::QtSenderStack* QtInstance::qtSenderStack()
-{
-    return senderStack();
 }
 
 // In qt_runtime.cpp
@@ -389,11 +353,7 @@ void QtField::setValueToInstance(ExecState* exec, const Instance* inst, JSValue 
     if (obj) {
         QMetaType::Type argtype = QMetaType::Void;
         if (m_type == MetaProperty)
-#if HAVE(QT5)
             argtype = (QMetaType::Type) m_property.userType();
-#else
-            argtype = (QMetaType::Type) QMetaType::type(m_property.typeName());
-#endif
 
         // dynamic properties just get any QVariant
         QVariant val = convertValueToQVariant(exec, aValue, argtype, 0);

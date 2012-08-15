@@ -59,9 +59,9 @@ WebInspector.UISourceCodeFrame.prototype = {
         this._uiSourceCode.commitWorkingCopy(this._didEditContent.bind(this));
     },
 
-    afterTextChanged: function(oldRange, newRange)
+    onTextChanged: function(oldRange, newRange)
     {
-        this._uiSourceCode.setWorkingCopy(this.textModel.text());
+        this._uiSourceCode.setWorkingCopy(this._textEditor.text());
     },
 
     _didEditContent: function(error)

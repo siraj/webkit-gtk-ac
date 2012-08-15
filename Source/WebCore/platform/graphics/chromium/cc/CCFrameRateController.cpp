@@ -78,9 +78,9 @@ CCFrameRateController::~CCFrameRateController()
 
 void CCFrameRateController::setActive(bool active)
 {
+    TRACE_EVENT1("cc", "CCFrameRateController::setActive", "active", active);
     if (m_active == active)
         return;
-    TRACE_EVENT1("cc", "CCFrameRateController::setActive", "active", active);
     m_active = active;
 
     if (m_isTimeSourceThrottling)
@@ -96,6 +96,11 @@ void CCFrameRateController::setActive(bool active)
 void CCFrameRateController::setMaxFramesPending(int maxFramesPending)
 {
     m_maxFramesPending = maxFramesPending;
+}
+
+void CCFrameRateController::setTimebaseAndInterval(double timebase, double intervalSeconds)
+{
+    m_timeSource->setTimebaseAndInterval(timebase, intervalSeconds);
 }
 
 void CCFrameRateController::onTimerTick()

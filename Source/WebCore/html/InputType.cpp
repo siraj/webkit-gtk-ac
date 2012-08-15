@@ -423,10 +423,6 @@ void InputType::handleBeforeTextInsertedEvent(BeforeTextInsertedEvent*)
 {
 }
 
-void InputType::handleWheelEvent(WheelEvent*)
-{
-}
-
 #if ENABLE(TOUCH_EVENTS)
 void InputType::handleTouchEvent(TouchEvent*)
 {
@@ -907,6 +903,12 @@ String InputType::defaultToolTip() const
 #if ENABLE(DATALIST_ELEMENT)
 void InputType::listAttributeTargetChanged()
 {
+}
+
+Decimal InputType::findClosestTickMarkValue(const Decimal&)
+{
+    ASSERT_NOT_REACHED();
+    return Decimal::nan();
 }
 #endif
 

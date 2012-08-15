@@ -31,6 +31,7 @@
 #include "HTMLInputElement.h"
 #include "HTMLNames.h"
 #include "HTMLPlugInElement.h"
+#include "InRegionScroller_p.h"
 #include "InputHandler.h"
 #include "IntRect.h"
 #include "IntSize.h"
@@ -41,7 +42,6 @@
 #include "RenderLayer.h"
 #include "RenderTheme.h"
 #include "RenderView.h"
-#include "RenderedDocumentMarker.h"
 #include "SelectionHandler.h"
 #include "WebPage_p.h"
 #include "WebTapHighlight.h"
@@ -213,7 +213,12 @@ bool TouchEventHandler::handleTouchPoint(Platform::TouchPoint& point, bool useFa
         }
     case Platform::TouchPoint::TouchReleased:
         {
-            unsigned spellLength = spellCheck(point);
+            imf_sp_text_t spellCheckOptionRequest;
+            bool shouldRequestSpellCheckOptions = false;
+
+            if (m_lastFatFingersResult.isTextInput())
+                shouldRequestSpellCheckOptions = m_webPage->m_inputHandler->shouldRequestSpellCheckingOptionsForPoint(point.m_pos, m_lastFatFingersResult.nodeAsElementIfApplicable(), spellCheckOptionRequest);
+
             // Apply any suppressed changes. This does not eliminate the need
             // for the show after the handling of fat finger pressed as it may
             // have triggered a state change.
@@ -239,11 +244,8 @@ bool TouchEventHandler::handleTouchPoint(Platform::TouchPoint& point, bool useFa
             PlatformMouseEvent mouseEvent(adjustedPoint, m_lastScreenPoint, PlatformEvent::MouseReleased, 1, LeftButton, TouchScreen);
             m_webPage->handleMouseEvent(mouseEvent);
             m_lastFatFingersResult.reset(); // Reset the fat finger result as its no longer valid when a user's finger is not on the screen.
-            if (spellLength) {
-                unsigned end = m_webPage->m_inputHandler->caretPosition();
-                unsigned start = end - spellLength;
-                m_webPage->m_client->requestSpellingSuggestionsForString(start, end);
-            }
+            if (shouldRequestSpellCheckOptions)
+                m_webPage->m_inputHandler->requestSpellingCheckingOptions(spellCheckOptionRequest);
             return true;
         }
     case Platform::TouchPoint::TouchMoved:
@@ -261,31 +263,6 @@ bool TouchEventHandler::handleTouchPoint(Platform::TouchPoint& point, bool useFa
         break;
     }
     return false;
-}
-
-unsigned TouchEventHandler::spellCheck(Platform::TouchPoint& touchPoint)
-{
-    Element* elementUnderFatFinger = m_lastFatFingersResult.nodeAsElementIfApplicable();
-    if (!m_lastFatFingersResult.isTextInput() || !elementUnderFatFinger)
-        return 0;
-
-    LayoutPoint contentPos(m_webPage->mapFromViewportToContents(touchPoint.m_pos));
-    contentPos = DOMSupport::convertPointToFrame(m_webPage->mainFrame(), m_webPage->focusedOrMainFrame(), contentPos);
-
-    Document* document = elementUnderFatFinger->document();
-    ASSERT(document);
-    RenderedDocumentMarker* marker = document->markers()->renderedMarkerContainingPoint(contentPos, DocumentMarker::Spelling);
-    if (!marker)
-        return 0;
-
-    IntRect rect = marker->renderedRect();
-    LayoutPoint newContentPos = LayoutPoint(rect.x() + rect.width(), rect.y() + rect.height() / 2);
-    Frame* frame = m_webPage->focusedOrMainFrame();
-    if (frame != m_webPage->mainFrame())
-        newContentPos = m_webPage->mainFrame()->view()->windowToContents(frame->view()->contentsToWindow(newContentPos));
-    m_lastFatFingersResult.m_adjustedPosition = newContentPos;
-    m_lastFatFingersResult.m_positionWasAdjusted = true;
-    return marker->endOffset() - marker->startOffset();
 }
 
 void TouchEventHandler::handleFatFingerPressed()
@@ -363,12 +340,12 @@ void TouchEventHandler::drawTapHighlight()
     // On the client side, this info is being used to hide the tap highlight window on scroll.
     RenderLayer* layer = m_webPage->enclosingFixedPositionedAncestorOrSelfIfFixedPositioned(renderer->enclosingLayer());
     bool shouldHideTapHighlightRightAfterScrolling = !layer->renderer()->isRenderView();
-    shouldHideTapHighlightRightAfterScrolling |= !!m_webPage->m_inRegionScrollStartingNode.get();
+    shouldHideTapHighlightRightAfterScrolling |= !!m_webPage->m_inRegionScroller->d->node();
 
     IntPoint framePos(m_webPage->frameOffset(elementFrame));
 
     // FIXME: We can get more precise on the <map> case by calculating the rect with HTMLAreaElement::computeRect().
-    IntRect absoluteRect = renderer->absoluteClippedOverflowRect();
+    IntRect absoluteRect(renderer->absoluteClippedOverflowRect());
     absoluteRect.move(framePos.x(), framePos.y());
 
     IntRect clippingRect;

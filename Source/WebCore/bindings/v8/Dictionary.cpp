@@ -61,12 +61,15 @@
 namespace WebCore {
 
 Dictionary::Dictionary()
+    : m_isolate(0)
 {
 }
 
-Dictionary::Dictionary(const v8::Local<v8::Value>& options)
+Dictionary::Dictionary(const v8::Local<v8::Value>& options, v8::Isolate* isolate)
     : m_options(options)
+    , m_isolate(isolate)
 {
+    ASSERT(m_isolate);
 }
 
 Dictionary::~Dictionary()
@@ -76,6 +79,7 @@ Dictionary::~Dictionary()
 Dictionary& Dictionary::operator=(const Dictionary& optionsObject)
 {
     m_options = optionsObject.m_options;
+    m_isolate = optionsObject.m_isolate;
     return *this;
 }
 
@@ -156,7 +160,7 @@ bool Dictionary::get(const String& key, String& value) const
     //        an empty string and returning true when we should be returning false.
     //        See fast/dom/Geolocation/script-tests/argument-types.js for a similar
     //        example.
-    value = v8ValueToWebCoreString(v8Value);
+    value = toWebCoreString(v8Value);
     return true;
 }
 
@@ -263,7 +267,9 @@ bool Dictionary::get(const String& key, MessagePortArray& value) const
     if (!getKey(key, v8Value))
         return false;
 
-    return getMessagePortArray(v8Value, value);
+    ASSERT(m_isolate);
+    ASSERT(m_isolate == v8::Isolate::GetCurrent());
+    return getMessagePortArray(v8Value, value, m_isolate);
 }
 
 bool Dictionary::get(const String& key, HashSet<AtomicString>& value) const
@@ -279,7 +285,7 @@ bool Dictionary::get(const String& key, HashSet<AtomicString>& value) const
     v8::Local<v8::Array> v8Array = v8::Local<v8::Array>::Cast(v8Value);
     for (size_t i = 0; i < v8Array->Length(); ++i) {
         v8::Local<v8::Value> indexedValue = v8Array->Get(v8Integer(i));
-        value.add(v8ValueToWebCoreString(indexedValue));
+        value.add(toWebCoreString(indexedValue));
     }
 
     return true;
@@ -295,7 +301,7 @@ bool Dictionary::getWithUndefinedOrNullCheck(const String& key, String& value) c
     //        an empty string and returning true when we should be returning false.
     //        See fast/dom/Geolocation/script-tests/argument-types.js for a similar
     //        example.
-    value = WebCore::isUndefinedOrNull(v8Value) ? String() : v8ValueToWebCoreString(v8Value);
+    value = WebCore::isUndefinedOrNull(v8Value) ? String() : toWebCoreString(v8Value);
     return true;
 }
 
@@ -419,8 +425,11 @@ bool Dictionary::get(const String& key, Dictionary& value) const
     if (!getKey(key, v8Value))
         return false;
 
-    if (v8Value->IsObject())
-        value = Dictionary(v8Value);
+    if (v8Value->IsObject()) {
+        ASSERT(m_isolate);
+        ASSERT(m_isolate == v8::Isolate::GetCurrent());
+        value = Dictionary(v8Value, m_isolate);
+    }
 
     return true;
 }
@@ -437,7 +446,7 @@ bool Dictionary::get(const String& key, Vector<String>& value) const
     v8::Local<v8::Array> v8Array = v8::Local<v8::Array>::Cast(v8Value);
     for (size_t i = 0; i < v8Array->Length(); ++i) {
         v8::Local<v8::Value> indexedValue = v8Array->Get(v8::Uint32::New(i));
-        value.append(v8ValueToWebCoreString(indexedValue));
+        value.append(toWebCoreString(indexedValue));
     }
 
     return true;
@@ -452,7 +461,9 @@ bool Dictionary::get(const String& key, ArrayValue& value) const
     if (!v8Value->IsArray())
         return false;
 
-    value = ArrayValue(v8::Local<v8::Array>::Cast(v8Value));
+    ASSERT(m_isolate);
+    ASSERT(m_isolate == v8::Isolate::GetCurrent());
+    value = ArrayValue(v8::Local<v8::Array>::Cast(v8Value), m_isolate);
     return true;
 }
 
@@ -474,8 +485,8 @@ bool Dictionary::getOwnPropertiesAsStringHashMap(WTF::HashMap<String, String>& h
             continue;
 
         v8::Local<v8::Value> value = options->Get(key);
-        String stringKey = v8ValueToWebCoreString(key);
-        String stringValue = v8ValueToWebCoreString(value);
+        String stringKey = toWebCoreString(key);
+        String stringValue = toWebCoreString(value);
         if (!stringKey.isEmpty())
             hashMap.set(stringKey, stringValue);
     }

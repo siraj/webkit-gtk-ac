@@ -78,12 +78,9 @@ using BlackBerry::Platform::Graphics::Window;
 
 namespace WebCore {
 
-static CString frameOrigin(Frame* frame)
+static CString toOriginString(Frame* frame)
 {
-    DOMWindow* window = frame->domWindow();
-    SecurityOrigin* origin = window->securityOrigin();
-    CString latinOrigin = origin->toString().latin1();
-    return latinOrigin;
+    return frame->document()->securityOrigin()->toString().latin1();
 }
 
 ChromeClientBlackBerry::ChromeClientBlackBerry(WebPagePrivate* pagePrivate)
@@ -111,7 +108,7 @@ void ChromeClientBlackBerry::runJavaScriptAlert(Frame* frame, const String& mess
 #endif
 
     TimerBase::fireTimersInNestedEventLoop();
-    CString latinOrigin = frameOrigin(frame);
+    CString latinOrigin = toOriginString(frame);
     m_webPagePrivate->m_client->runJavaScriptAlert(message.characters(), message.length(), latinOrigin.data(), latinOrigin.length());
 }
 
@@ -123,7 +120,7 @@ bool ChromeClientBlackBerry::runJavaScriptConfirm(Frame* frame, const String& me
 #endif
 
     TimerBase::fireTimersInNestedEventLoop();
-    CString latinOrigin = frameOrigin(frame);
+    CString latinOrigin = toOriginString(frame);
     return m_webPagePrivate->m_client->runJavaScriptConfirm(message.characters(), message.length(), latinOrigin.data(), latinOrigin.length());
 }
 
@@ -137,7 +134,7 @@ bool ChromeClientBlackBerry::runJavaScriptPrompt(Frame* frame, const String& mes
 #endif
 
     TimerBase::fireTimersInNestedEventLoop();
-    CString latinOrigin = frameOrigin(frame);
+    CString latinOrigin = toOriginString(frame);
     WebString clientResult;
     if (m_webPagePrivate->m_client->runJavaScriptPrompt(message.characters(), message.length(), defaultValue.characters(), defaultValue.length(), latinOrigin.data(), latinOrigin.length(), clientResult)) {
         result = clientResult;
@@ -386,7 +383,7 @@ bool ChromeClientBlackBerry::runBeforeUnloadConfirmPanel(const String& message, 
 #endif
 
     TimerBase::fireTimersInNestedEventLoop();
-    CString latinOrigin = frameOrigin(frame);
+    CString latinOrigin = toOriginString(frame);
     return m_webPagePrivate->m_client->runBeforeUnloadConfirmPanel(message.characters(), message.length(), latinOrigin.data(), latinOrigin.length());
 }
 
@@ -513,14 +510,25 @@ void ChromeClientBlackBerry::runOpenPanel(Frame*, PassRefPtr<FileChooser> choose
     for (unsigned i = 0; i < numberOfInitialFiles; ++i)
         initialFiles[i] = chooser->settings().selectedFiles[i];
 
+    SharedArray<WebString> acceptMIMETypes;
+    unsigned numberOfTypes = chooser->settings().acceptMIMETypes.size();
+    if (numberOfTypes > 0)
+        acceptMIMETypes.reset(new WebString[numberOfTypes], numberOfTypes);
+    for (unsigned i = 0; i < numberOfTypes; ++i)
+        acceptMIMETypes[i] = chooser->settings().acceptMIMETypes[i];
+
+    WebString capture;
+#if ENABLE(MEDIA_CAPTURE)
+    capture = chooser->settings().capture;
+#endif
+
     SharedArray<WebString> chosenFiles;
 
     {
         PageGroupLoadDeferrer deferrer(m_webPagePrivate->m_page, true);
         TimerBase::fireTimersInNestedEventLoop();
 
-        // FIXME: Use chooser->settings().acceptMIMETypes instead of WebString() for the second parameter.
-        if (!m_webPagePrivate->m_client->chooseFilenames(chooser->settings().allowsMultipleFiles, WebString(), initialFiles, chosenFiles))
+        if (!m_webPagePrivate->m_client->chooseFilenames(chooser->settings().allowsMultipleFiles, acceptMIMETypes, initialFiles, capture, chosenFiles))
             return;
     }
 
@@ -757,7 +765,7 @@ void ChromeClientBlackBerry::fullScreenRendererChanged(RenderBox* fullScreenRend
 void ChromeClientBlackBerry::requestWebGLPermission(Frame* frame)
 {
     if (frame) {
-        CString latinOrigin = frameOrigin(frame);
+        CString latinOrigin = toOriginString(frame);
         m_webPagePrivate->m_client->requestWebGLPermission(latinOrigin.data());
     }
 }

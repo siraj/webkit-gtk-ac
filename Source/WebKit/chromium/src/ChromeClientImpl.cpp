@@ -575,6 +575,7 @@ void ChromeClientImpl::contentsSizeChanged(Frame* frame, const IntSize& size) co
     m_webView->didChangeContentsSize();
 
     WebFrameImpl* webframe = WebFrameImpl::fromFrame(frame);
+    webframe->didChangeContentsSize(size);
     if (webframe->client())
         webframe->client()->didChangeContentsSize(webframe, size);
 }
@@ -1109,6 +1110,15 @@ void ChromeClientImpl::requestPointerUnlock()
 bool ChromeClientImpl::isPointerLocked()
 {
     return m_webView->isPointerLocked();
+}
+#endif
+
+#if ENABLE(WIDGET_REGION)
+void ChromeClientImpl::dashboardRegionsChanged()
+{
+    WebViewClient* client = m_webView->client();
+    if (client)
+        client->draggableRegionsChanged();
 }
 #endif
 

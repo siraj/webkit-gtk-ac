@@ -26,8 +26,8 @@
 #include "ContentData.h"
 #include "CursorList.h"
 #include "CSSPropertyNames.h"
-#include "CSSWrapShapes.h"
 #include "FontSelector.h"
+#include "MemoryInstrumentation.h"
 #include "QuotesData.h"
 #include "RenderArena.h"
 #include "RenderObject.h"
@@ -444,7 +444,7 @@ StyleDifference RenderStyle::diff(const RenderStyle* other, unsigned& changedCon
         }
 #endif
 
-#if ENABLE(DASHBOARD_SUPPORT)
+#if ENABLE(DASHBOARD_SUPPORT) || ENABLE(WIDGET_REGION)
         // If regions change, trigger a relayout to re-calc regions.
         if (rareNonInheritedData->m_dashboardRegions != other->rareNonInheritedData->m_dashboardRegions)
             return StyleDifferenceLayout;
@@ -578,6 +578,9 @@ StyleDifference RenderStyle::diff(const RenderStyle* other, unsigned& changedCon
         // a full layout is necessary to keep floating object lists sane.
         return StyleDifferenceLayout;
     }
+
+    if (!QuotesData::equals(rareInheritedData->quotes.get(), other->rareInheritedData->quotes.get()))
+        return StyleDifferenceLayout;
 
 #if ENABLE(SVG)
     // SVGRenderStyle::diff() might have returned StyleDifferenceRepaint, eg. if fill changes.
@@ -939,6 +942,23 @@ static float calcConstraintScaleFor(const IntRect& rect, const RoundedRect::Radi
     return factor;
 }
 
+StyleImage* RenderStyle::listStyleImage() const { return inherited->list_style_image.get(); }
+void RenderStyle::setListStyleImage(PassRefPtr<StyleImage> v)
+{
+    if (inherited->list_style_image != v)
+        inherited.access()->list_style_image = v;
+}
+
+Color RenderStyle::color() const { return inherited->color; }
+Color RenderStyle::visitedLinkColor() const { return inherited->visitedLinkColor; }
+void RenderStyle::setColor(const Color& v) { SET_VAR(inherited, color, v) };
+void RenderStyle::setVisitedLinkColor(const Color& v) { SET_VAR(inherited, visitedLinkColor, v) }
+
+short RenderStyle::horizontalBorderSpacing() const { return inherited->horizontal_border_spacing; }
+short RenderStyle::verticalBorderSpacing() const { return inherited->vertical_border_spacing; }
+void RenderStyle::setHorizontalBorderSpacing(short v) { SET_VAR(inherited, horizontal_border_spacing, v) }
+void RenderStyle::setVerticalBorderSpacing(short v) { SET_VAR(inherited, vertical_border_spacing, v) }
+
 RoundedRect RenderStyle::getRoundedBorderFor(const LayoutRect& borderRect, RenderView* renderView, bool includeLogicalLeftEdge, bool includeLogicalRightEdge) const
 {
     IntRect snappedBorderRect(pixelSnappedIntRect(borderRect));
@@ -1049,7 +1069,7 @@ const AtomicString& RenderStyle::textEmphasisMarkString() const
     return nullAtom;
 }
 
-#if ENABLE(DASHBOARD_SUPPORT)
+#if ENABLE(DASHBOARD_SUPPORT) || ENABLE(WIDGET_REGION)
 const Vector<StyleDashboardRegion>& RenderStyle::initialDashboardRegions()
 {
     DEFINE_STATIC_LOCAL(Vector<StyleDashboardRegion>, emptyList, ());
@@ -1160,6 +1180,46 @@ const Animation* RenderStyle::transitionForProperty(CSSPropertyID property) cons
     }
     return 0;
 }
+
+const Font& RenderStyle::font() const { return inherited->font; }
+const FontMetrics& RenderStyle::fontMetrics() const { return inherited->font.fontMetrics(); }
+const FontDescription& RenderStyle::fontDescription() const { return inherited->font.fontDescription(); }
+int RenderStyle::fontSize() const { return inherited->font.pixelSize(); }
+
+int RenderStyle::wordSpacing() const { return inherited->font.wordSpacing(); }
+int RenderStyle::letterSpacing() const { return inherited->font.letterSpacing(); }
+
+bool RenderStyle::setFontDescription(const FontDescription& v)
+{
+    if (inherited->font.fontDescription() != v) {
+        inherited.access()->font = Font(v, inherited->font.letterSpacing(), inherited->font.wordSpacing());
+        return true;
+    }
+    return false;
+}
+
+Length RenderStyle::lineHeight() const { return inherited->line_height; }
+void RenderStyle::setLineHeight(Length v) { SET_VAR(inherited, line_height, v); }
+
+int RenderStyle::computedLineHeight(RenderView* renderView) const
+{
+    const Length& lh = inherited->line_height;
+
+    // Negative value means the line height is not set. Use the font's built-in spacing.
+    if (lh.isNegative())
+        return fontMetrics().lineSpacing();
+
+    if (lh.isPercent())
+        return minimumValueForLength(lh, fontSize());
+
+    if (lh.isViewportPercentage())
+        return valueForLength(lh, 0, renderView);
+
+    return lh.value();
+}
+
+void RenderStyle::setWordSpacing(int v) { inherited.access()->font.setWordSpacing(v); }
+void RenderStyle::setLetterSpacing(int v) { inherited.access()->font.setLetterSpacing(v); }
 
 void RenderStyle::setBlendedFontSize(int size)
 {
@@ -1484,6 +1544,26 @@ LayoutBoxExtent RenderStyle::imageOutsets(const NinePieceImage& image) const
                            NinePieceImage::computeOutset(image.outset().right(), borderRightWidth()),
                            NinePieceImage::computeOutset(image.outset().bottom(), borderBottomWidth()),
                            NinePieceImage::computeOutset(image.outset().left(), borderLeftWidth()));
+}
+
+void RenderStyle::reportMemoryUsage(MemoryObjectInfo* memoryObjectInfo) const
+{
+    MemoryClassInfo info(memoryObjectInfo, this, MemoryInstrumentation::CSS);
+    info.addMember(m_box);
+    info.addMember(visual);
+    // FIXME: m_background contains RefPtr<StyleImage> that might need to be instrumented.
+    info.addMember(m_background);
+    // FIXME: surrond contains some fields e.g. BorderData that might need to be instrumented.
+    info.addMember(surround);
+    info.addInstrumentedMember(rareNonInheritedData);
+    info.addInstrumentedMember(rareInheritedData);
+    // FIXME: inherited contains StyleImage and Font fields that might need to be instrumented.
+    info.addMember(inherited);
+    if (m_cachedPseudoStyles)
+        info.addVectorPtr(m_cachedPseudoStyles.get());
+#if ENABLE(SVG)
+    info.addMember(m_svgStyle);
+#endif
 }
 
 } // namespace WebCore

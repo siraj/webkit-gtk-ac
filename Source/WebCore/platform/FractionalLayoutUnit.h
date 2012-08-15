@@ -35,6 +35,7 @@
 #include <limits>
 #include <math.h>
 #include <stdlib.h>
+#include <wtf/MathExtras.h>
 
 #if PLATFORM(QT)
 #include <QDataStream>
@@ -94,6 +95,14 @@ public:
         return v;
     }
 
+    static FractionalLayoutUnit fromFloatFloor(float value)
+    {
+        REPORT_OVERFLOW(isInBounds(value));
+        FractionalLayoutUnit v;
+        v.m_value = floorf(value * kFixedPointDenominator);
+        return v;
+    }
+
     static FractionalLayoutUnit fromFloatRound(float value)
     {
         if (value >= 0)
@@ -105,10 +114,20 @@ public:
     int toInt() const { return m_value / kFixedPointDenominator; }
     float toFloat() const { return static_cast<float>(m_value) / kFixedPointDenominator; }
     double toDouble() const { return static_cast<double>(m_value) / kFixedPointDenominator; }
+    float ceilToFloat() const
+    {
+        float floatValue = toFloat();
+        if (static_cast<int>(floatValue * kFixedPointDenominator) == m_value)
+            return floatValue;
+        if (floatValue > 0)
+            return nextafterf(floatValue, std::numeric_limits<float>::max());
+        return nextafterf(floatValue, std::numeric_limits<float>::min());
+    }
 #else
     int toInt() const { return m_value; }
     float toFloat() const { return static_cast<float>(m_value); }
     double toDouble() const { return static_cast<double>(m_value); }
+    float ceilToFloat() const { return toFloat(); }
 #endif
     unsigned toUnsigned() const { REPORT_OVERFLOW(m_value >= 0); return toInt(); }
 
@@ -145,9 +164,9 @@ public:
 #endif
     {
 #if ENABLE(SUBPIXEL_LAYOUT)
-        if (m_value > 0)
+        if (m_value >= 0)
             return (m_value + kFixedPointDenominator - 1) / kFixedPointDenominator;
-        return (m_value - kFixedPointDenominator + 1) / kFixedPointDenominator;
+        return toInt();
 #else
         return m_value;
 #endif
@@ -165,10 +184,20 @@ public:
 
     int floor() const
     {
-        return toInt();
+#if ENABLE(SUBPIXEL_LAYOUT)
+        if (m_value >= 0)
+            return toInt();
+        return (m_value - kFixedPointDenominator + 1) / kFixedPointDenominator;
+#else
+        return m_value;
+#endif
     }
 
+#if ENABLE(SUBPIXEL_LAYOUT)
     static float epsilon() { return 1.0f / kFixedPointDenominator; }
+#else
+    static int epsilon() { return 0; }
+#endif
     static const FractionalLayoutUnit max()
     {
         FractionalLayoutUnit m;
@@ -180,6 +209,10 @@ public:
         FractionalLayoutUnit m;
         m.m_value = std::numeric_limits<int>::min();
         return m;
+    }
+    static FractionalLayoutUnit clamp(double value)
+    {
+        return clampTo<FractionalLayoutUnit>(value, FractionalLayoutUnit::min(), FractionalLayoutUnit::max());
     }
     
 private:
@@ -556,6 +589,42 @@ inline FractionalLayoutUnit operator-(const FractionalLayoutUnit& a)
     return returnVal;
 }
 
+// For returning the remainder after a division with integer results.
+inline FractionalLayoutUnit intMod(const FractionalLayoutUnit& a, const FractionalLayoutUnit& b)
+{
+#if ENABLE(SUBPIXEL_LAYOUT)
+    // This calculates the modulo so that: a = static_cast<int>(a / b) * b + intMod(a, b).
+    FractionalLayoutUnit returnVal;
+    returnVal.setRawValue(a.rawValue() % b.rawValue());
+    return returnVal;
+#else
+    return a.rawValue() % b.rawValue();
+#endif
+}
+
+inline FractionalLayoutUnit operator%(const FractionalLayoutUnit& a, const FractionalLayoutUnit& b)
+{
+#if ENABLE(SUBPIXEL_LAYOUT)
+    // This calculates the modulo so that: a = (a / b) * b + a % b.
+    FractionalLayoutUnit returnVal;
+    long long rawVal = (static_cast<long long>(kFixedPointDenominator) * a.rawValue()) % b.rawValue();
+    returnVal.setRawValue(rawVal / kFixedPointDenominator);
+    return returnVal;
+#else
+    return a.rawValue() % b.rawValue();
+#endif
+}
+
+inline FractionalLayoutUnit operator%(const FractionalLayoutUnit& a, int b)
+{
+    return a % FractionalLayoutUnit(b);
+}
+
+inline FractionalLayoutUnit operator%(int a, const FractionalLayoutUnit& b)
+{
+    return FractionalLayoutUnit(a) % b;
+}
+
 inline FractionalLayoutUnit& operator+=(FractionalLayoutUnit& a, const FractionalLayoutUnit& b)
 {
     a = a + b;
@@ -592,21 +661,53 @@ inline FractionalLayoutUnit& operator-=(FractionalLayoutUnit& a, const Fractiona
     return a;
 }
 
+inline FractionalLayoutUnit& operator-=(FractionalLayoutUnit& a, float b)
+{
+    a = a - b;
+    return a;
+}
+
 inline float& operator-=(float& a, const FractionalLayoutUnit& b)
 {
     a = a - b;
     return a;
 }
 
-inline FractionalLayoutUnit& operator*=(FractionalLayoutUnit& a, int b)
+inline FractionalLayoutUnit& operator*=(FractionalLayoutUnit& a, const FractionalLayoutUnit& b)
+{
+    a = a * b;
+    return a;
+}
+// operator*=(FractionalLayoutUnit& a, int b) is supported by the operator above plus FractionalLayoutUnit(int).
+
+inline FractionalLayoutUnit& operator*=(FractionalLayoutUnit& a, float b)
 {
     a = a * b;
     return a;
 }
 
-inline FractionalLayoutUnit& operator*=(FractionalLayoutUnit& a, float b)
+inline float& operator*=(float& a, const FractionalLayoutUnit& b)
 {
     a = a * b;
+    return a;
+}
+
+inline FractionalLayoutUnit& operator/=(FractionalLayoutUnit& a, const FractionalLayoutUnit& b)
+{
+    a = a / b;
+    return a;
+}
+// operator/=(FractionalLayoutUnit& a, int b) is supported by the operator above plus FractionalLayoutUnit(int).
+
+inline FractionalLayoutUnit& operator/=(FractionalLayoutUnit& a, float b)
+{
+    a = a / b;
+    return a;
+}
+
+inline float& operator/=(float& a, const FractionalLayoutUnit& b)
+{
+    a = a / b;
     return a;
 }
 

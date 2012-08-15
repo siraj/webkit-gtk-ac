@@ -303,13 +303,7 @@ bool Range::isPointInRange(Node* refNode, int offset, ExceptionCode& ec)
         return false;
     }
 
-    if (!refNode->attached()) {
-        // Firefox doesn't throw an exception for this case; it returns false.
-        return false;
-    }
-
-    if (refNode->document() != m_ownerDocument) {
-        ec = WRONG_DOCUMENT_ERR;
+    if (!refNode->attached() || refNode->document() != m_ownerDocument) {
         return false;
     }
 
@@ -1948,7 +1942,6 @@ void Range::getBorderAndTextQuads(Vector<FloatQuad>& quads) const
     }
 }
 
-    
 FloatRect Range::boundingRect() const
 {
     if (!m_start.container())
@@ -1960,6 +1953,23 @@ FloatRect Range::boundingRect() const
     getBorderAndTextQuads(quads);
     if (quads.isEmpty())
         return FloatRect();
+
+    FloatRect result;
+    for (size_t i = 0; i < quads.size(); ++i)
+        result.unite(quads[i].boundingBox());
+
+    return result;
+}
+
+FloatRect Range::transformFriendlyBoundingBox() const
+{
+    if (!m_start.container())
+        return FloatRect();
+
+    m_ownerDocument->updateLayoutIgnorePendingStylesheets();
+
+    Vector<FloatQuad> quads;
+    textQuads(quads);
 
     FloatRect result;
     for (size_t i = 0; i < quads.size(); ++i)

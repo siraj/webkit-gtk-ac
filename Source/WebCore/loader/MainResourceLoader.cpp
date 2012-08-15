@@ -367,7 +367,7 @@ void MainResourceLoader::didReceiveResponse(const ResourceResponse& r)
         if (m_frame->loader()->shouldInterruptLoadForXFrameOptions(content, r.url())) {
             InspectorInstrumentation::continueAfterXFrameOptionsDenied(m_frame.get(), documentLoader(), identifier(), r);
             DEFINE_STATIC_LOCAL(String, consoleMessage, ("Refused to display document because display forbidden by X-Frame-Options.\n"));
-            m_frame->domWindow()->console()->addMessage(JSMessageSource, LogMessageType, ErrorMessageLevel, consoleMessage);
+            m_frame->document()->domWindow()->console()->addMessage(JSMessageSource, LogMessageType, ErrorMessageLevel, consoleMessage);
 
             cancel();
             return;
@@ -542,6 +542,15 @@ void MainResourceLoader::didFail(const ResourceError& error)
 #endif
     
     receivedError(error);
+}
+
+void MainResourceLoader::reportMemoryUsage(MemoryObjectInfo* memoryObjectInfo) const
+{
+    MemoryClassInfo info(memoryObjectInfo, this, MemoryInstrumentation::Loader);
+    ResourceLoader::reportMemoryUsage(memoryObjectInfo);
+    info.addMember(m_initialRequest);
+    info.addInstrumentedMember(m_substituteData);
+    info.addMember(m_dataLoadTimer);
 }
 
 void MainResourceLoader::handleEmptyLoad(const KURL& url, bool forURLScheme)

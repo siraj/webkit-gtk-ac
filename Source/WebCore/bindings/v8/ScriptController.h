@@ -65,6 +65,7 @@ public:
     // FIXME: V8Proxy should either be folded into ScriptController
     // or this accessor should be made JSProxy*
     V8Proxy* proxy() { return m_proxy.get(); }
+    V8DOMWindowShell* windowShell() { return m_proxy->windowShell(); }
 
     ScriptValue executeScript(const ScriptSourceCode&);
     ScriptValue executeScript(const String& script, bool forceUserGesture = false);
@@ -81,6 +82,10 @@ public:
     // as a string.
     ScriptValue evaluate(const ScriptSourceCode&);
 
+    // Evaluate JavaScript in a new isolated world. The script gets its own
+    // global scope, its own prototypes for intrinsic JavaScript objects (String,
+    // Array, and so-on), and its own wrappers for all DOM nodes and DOM
+    // constructors.
     void evaluateInIsolatedWorld(unsigned worldID, const Vector<ScriptSourceCode>& sources, Vector<ScriptValue>* results);
 
     // Executes JavaScript in an isolated world. The script gets its own global scope,
@@ -159,7 +164,7 @@ public:
 
     const String* sourceURL() const { return m_sourceURL; } // 0 if we are not evaluating any script.
 
-    void clearWindowShell(bool = false);
+    void clearWindowShell(DOMWindow*, bool);
     void updateDocument();
 
     void namedItemAdded(HTMLDocument*, const AtomicString&);

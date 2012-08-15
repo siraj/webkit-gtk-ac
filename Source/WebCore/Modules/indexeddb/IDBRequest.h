@@ -76,19 +76,18 @@ public:
     void markEarlyDeath();
     void setCursorDetails(IDBCursorBackendInterface::CursorType, IDBCursor::Direction);
     void setPendingCursor(PassRefPtr<IDBCursor>);
-    void finishCursor();
     void abort();
 
     // IDBCallbacks
     virtual void onError(PassRefPtr<IDBDatabaseError>);
     virtual void onSuccess(PassRefPtr<DOMStringList>);
     virtual void onSuccess(PassRefPtr<IDBDatabaseBackendInterface>);
-    virtual void onSuccess(PassRefPtr<IDBCursorBackendInterface>);
+    virtual void onSuccess(PassRefPtr<IDBCursorBackendInterface>, PassRefPtr<IDBKey>, PassRefPtr<IDBKey> primaryKey, PassRefPtr<SerializedScriptValue>);
     virtual void onSuccess(PassRefPtr<IDBKey>);
     virtual void onSuccess(PassRefPtr<IDBTransactionBackendInterface>);
     virtual void onSuccess(PassRefPtr<SerializedScriptValue>);
     virtual void onSuccess(PassRefPtr<SerializedScriptValue>, PassRefPtr<IDBKey>, const IDBKeyPath&);
-    virtual void onSuccessWithContinuation();
+    virtual void onSuccess(PassRefPtr<IDBKey>, PassRefPtr<IDBKey> primaryKey, PassRefPtr<SerializedScriptValue>);
     virtual void onSuccessWithPrefetch(const Vector<RefPtr<IDBKey> >&, const Vector<RefPtr<IDBKey> >&, const Vector<RefPtr<SerializedScriptValue> >&) { ASSERT_NOT_REACHED(); } // Not implemented. Callback should not reach the renderer side.
     virtual void onBlocked();
 
@@ -109,6 +108,8 @@ public:
 protected:
     IDBRequest(ScriptExecutionContext*, PassRefPtr<IDBAny> source, IDBTransaction*);
     void enqueueEvent(PassRefPtr<Event>);
+    bool shouldEnqueueEvent() const;
+
     RefPtr<IDBAny> m_result;
     unsigned short m_errorCode;
     String m_errorMessage;
@@ -122,14 +123,13 @@ private:
     virtual EventTargetData* ensureEventTargetData();
 
     PassRefPtr<IDBCursor> getResultCursor();
-    void setResultCursor(PassRefPtr<IDBCursor>);
+    void setResultCursor(PassRefPtr<IDBCursor>, PassRefPtr<IDBKey>, PassRefPtr<IDBKey> primaryKey, PassRefPtr<SerializedScriptValue>);
 
     RefPtr<IDBAny> m_source;
     RefPtr<IDBTransaction> m_transaction;
 
     ReadyState m_readyState;
     bool m_requestAborted; // May be aborted by transaction then receive async onsuccess; ignore vs. assert.
-    bool m_cursorFinished;
     bool m_contextStopped;
     Vector<RefPtr<Event> > m_enqueuedEvents;
 
@@ -137,6 +137,9 @@ private:
     IDBCursorBackendInterface::CursorType m_cursorType;
     IDBCursor::Direction m_cursorDirection;
     RefPtr<IDBCursor> m_pendingCursor;
+    RefPtr<IDBKey> m_cursorKey;
+    RefPtr<IDBKey> m_cursorPrimaryKey;
+    RefPtr<SerializedScriptValue> m_cursorValue;
 
     EventTargetData m_eventTargetData;
 };

@@ -38,7 +38,6 @@
 #include "UserGestureIndicator.h"
 #include "V8Binding.h"
 #include "V8GCController.h"
-#include "V8Helpers.h"
 #include "V8NPUtils.h"
 #include "V8Proxy.h"
 #include "WrapperTypeInfo.h"
@@ -60,6 +59,24 @@ WrapperTypeInfo* npObjectTypeInfo()
 
 typedef Vector<V8NPObject*> V8NPObjectVector;
 typedef HashMap<int, V8NPObjectVector> V8NPObjectMap;
+
+static v8::Local<v8::Context> toV8Context(NPP npp, NPObject* npObject)
+{
+    V8NPObject* object = reinterpret_cast<V8NPObject*>(npObject);
+    DOMWindow* window = object->rootObject;
+    if (!window || !window->isCurrentlyDisplayedInFrame())
+        return v8::Local<v8::Context>();
+    return V8Proxy::mainWorldContext(object->rootObject->frame());
+}
+
+static V8Proxy* toV8Proxy(NPObject* npObject)
+{
+    V8NPObject* object = reinterpret_cast<V8NPObject*>(npObject);
+    Frame* frame = object->rootObject->frame();
+    if (!frame)
+        return 0;
+    return frame->script()->proxy();
+}
 
 static V8NPObjectMap* staticV8NPObjectMap()
 {
@@ -481,7 +498,7 @@ void _NPN_SetException(NPObject* npObject, const NPUTF8 *message)
     if (!npObject || npObject->_class != npScriptObjectClass) {
         // We won't be able to find a proper scope for this exception, so just throw it.
         // This is consistent with JSC, which throws a global exception all the time.
-        V8Proxy::throwError(V8Proxy::GeneralError, message);
+        throwError(GeneralError, message);
         return;
     }
     v8::HandleScope handleScope;
@@ -492,7 +509,7 @@ void _NPN_SetException(NPObject* npObject, const NPUTF8 *message)
     v8::Context::Scope scope(context);
     ExceptionCatcher exceptionCatcher;
 
-    V8Proxy::throwError(V8Proxy::GeneralError, message);
+    throwError(GeneralError, message);
 }
 
 bool _NPN_Enumerate(NPP npp, NPObject* npObject, NPIdentifier** identifier, uint32_t* count)
