@@ -142,6 +142,8 @@ webkitgtk_static_h_api += \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebpolicydecision.h \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebresource.h \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebsettings.h \
+	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebusermedialist.h \
+	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebusermediarequest.h \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebwindowfeatures.h \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebview.h
 
@@ -276,6 +278,10 @@ webkitgtk_sources += \
 	Source/WebKit/gtk/webkit/webkitwebplugindatabaseprivate.h \
 	Source/WebKit/gtk/webkit/webkitwebsettings.cpp \
 	Source/WebKit/gtk/webkit/webkitwebsettingsprivate.h \
+	Source/WebKit/gtk/webkit/webkitwebusermedialist.cpp \
+	Source/WebKit/gtk/webkit/webkitwebusermedialistprivate.h \
+	Source/WebKit/gtk/webkit/webkitwebusermediarequest.cpp \
+	Source/WebKit/gtk/webkit/webkitwebusermediarequestprivate.h \
 	Source/WebKit/gtk/webkit/webkitwebview.cpp \
 	Source/WebKit/gtk/webkit/webkitwebviewprivate.h \
 	Source/WebKit/gtk/webkit/webkitwebwindowfeatures.cpp \

@@ -33,6 +33,8 @@
     <xi:include href="xml/webkitdownload.xml"/>
     <xi:include href="xml/webkitviewportattributes.xml"/>
     <xi:include href="xml/webkithittestresult.xml"/>
+    <xi:include href="xml/webkitwebusermedialist.xml"/>
+    <xi:include href="xml/webkitwebusermediarequest.xml"/>
     <xi:include href="xml/webkitwebplugin.xml"/>
     <xi:include href="xml/webkitwebplugindatabase.xml"/>
     <xi:include href="xml/webkitsoupauthdialog.xml"/>

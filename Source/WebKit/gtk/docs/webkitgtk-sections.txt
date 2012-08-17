@@ -403,6 +403,7 @@ WebKitWebViewTargetInfo
 WebKitWebViewViewMode
 <TITLE>WebKitWebView</TITLE>
 WebKitWebView
+webkit_web_view_accept_user_media_request
 webkit_web_view_can_copy_clipboard
 webkit_web_view_can_cut_clipboard
 webkit_web_view_can_go_back
@@ -455,6 +456,7 @@ webkit_web_view_new
 webkit_web_view_open
 webkit_web_view_paste_clipboard
 webkit_web_view_redo
+webkit_web_view_reject_user_media_request
 webkit_web_view_reload
 webkit_web_view_reload_bypass_cache
 webkit_web_view_search_text
@@ -683,6 +685,47 @@ WEBKIT_IS_ICON_DATABASE_CLASS
 <SUBSECTION Private>
 WebKitIconDatabaseClass
 WebKitIconDatabasePrivate
+</SECTION>
+
+<SECTION>
+<FILE>webkitwebusermedialist</FILE>
+<TITLE>WebKitWebUserMediaList</TITLE>
+WebKitWebUserMediaList
+webkit_web_user_media_list_get_length
+webkit_web_user_media_list_get_item_name
+webkit_web_user_media_list_get_item_selected
+webkit_web_user_media_list_select_item
+<SUBSECTION Standard>
+WEBKIT_IS_WEB_USER_MEDIA_LIST
+WEBKIT_IS_WEB_USER_MEDIA_LIST_CLASS
+WEBKIT_WEB_USER_MEDIA_LIST
+WEBKIT_WEB_USER_MEDIA_LIST_CLASS
+WEBKIT_WEB_USER_MEDIA_LIST_GET_CLASS
+WEBKIT_TYPE_WEB_USER_MEDIA_LIST
+<SUBSECTION Private>
+WebKitWebUserMediaListPrivate
+WebKitWebUserMediaListClass
+webkit_web_user_media_list_get_type
+</SECTION>
+
+<SECTION>
+<FILE>webkitwebusermediarequest</FILE>
+<TITLE>WebKitWebUserMediaRequest</TITLE>
+WebKitWebUserMediaRequest
+webkit_web_user_media_request_wants_audio
+webkit_web_user_media_request_wants_video
+webkit_web_user_media_request_get_origin
+<SUBSECTION Standard>
+WEBKIT_IS_WEB_USER_MEDIA_REQUEST
+WEBKIT_IS_WEB_USER_MEDIA_REQUEST_CLASS
+WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST
+WEBKIT_WEB_USER_MEDIA_REQUEST
+WEBKIT_WEB_USER_MEDIA_REQUEST_CLASS
+WEBKIT_WEB_USER_MEDIA_REQUEST_GET_CLASS
+<SUBSECTION Private>
+WebKitWebUserMediaRequestClass
+WebKitWebUserMediaRequestPrivate
+webkit_web_user_media_request_get_type
 </SECTION>
 
 <SECTION>
