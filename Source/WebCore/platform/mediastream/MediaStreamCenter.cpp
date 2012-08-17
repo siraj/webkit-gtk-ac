@@ -34,6 +34,7 @@
 #if ENABLE(MEDIA_STREAM)
 
 #include "MediaStreamCenter.h"
+
 #include "MediaStreamDescriptor.h"
 
 namespace WebCore {
