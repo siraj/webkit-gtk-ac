@@ -39,6 +39,7 @@ namespace WebKit {
 class UserMediaClientGtk : public WebCore::UserMediaClient {
 public:
     UserMediaClientGtk(WebKitWebView*);
+    ~UserMediaClientGtk();
 
     virtual void pageDestroyed();
 

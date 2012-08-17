@@ -41,6 +41,10 @@ UserMediaClientGtk::UserMediaClientGtk(WebKitWebView *webView)
     addUserMediaSupport(webView);
 }
 
+UserMediaClientGtk::~UserMediaClientGtk()
+{
+}
+
 void UserMediaClientGtk::pageDestroyed()
 {
     delete this;
