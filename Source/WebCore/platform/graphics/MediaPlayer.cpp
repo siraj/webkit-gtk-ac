@@ -46,6 +46,9 @@
 
 #if USE(GSTREAMER)
 #include "MediaPlayerPrivateGStreamer.h"
+#if ENABLE(MEDIA_STREAM)
+#include "StreamMediaPlayerPrivateGStreamer.h"
+#endif
 #define PlatformMediaEngineClassName MediaPlayerPrivateGStreamer
 #endif
 
@@ -209,6 +212,10 @@ static Vector<MediaPlayerFactory*>& installedMediaEngines()
     if (!enginesQueried) {
         enginesQueried = true;
 
+#if USE(GSTREAMER) && ENABLE(MEDIA_STREAM)
+        StreamMediaPlayerPrivateGStreamer::registerMediaEngine(addMediaEngine);
+#endif
+
 #if USE(AVFOUNDATION)
         if (Settings::isAVFoundationEnabled()) {
 #if PLATFORM(MAC)
@@ -226,6 +233,7 @@ static Vector<MediaPlayerFactory*>& installedMediaEngines()
 
     return installedEngines;
 }
+
 
 static void addMediaEngine(CreateMediaEnginePlayer constructor, MediaEngineSupportedTypes getSupportedTypes, MediaEngineSupportsType supportsType,
     MediaEngineGetSitesInMediaCache getSitesInMediaCache, MediaEngineClearMediaCache clearMediaCache, MediaEngineClearMediaCacheForSite clearMediaCacheForSite)
@@ -383,6 +391,8 @@ bool MediaPlayer::load(const KURL& url, const ContentType& contentType, const St
 void MediaPlayer::loadWithNextMediaEngine(MediaPlayerFactory* current)
 {
     MediaPlayerFactory* engine = 0;
+
+    LOG(MediaStream, "=========== content type %s", m_contentMIMEType.utf8().data());
 
     if (!m_contentMIMEType.isEmpty())
         engine = bestMediaEngineForTypeAndCodecs(m_contentMIMEType, m_contentTypeCodecs, m_keySystem, m_url, current);

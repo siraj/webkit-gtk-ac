@@ -20,6 +20,7 @@
       <dep package="libsoup"/>
       <dep package="at-spi2-core"/>
       <dep package="at-spi2-atk"/>
+      <dep package="farstream"/>
     </dependencies>
   </metamodule>
 
@@ -170,6 +171,13 @@
     <branch module="libsoup" version="2.39.2"
             repo="git.gnome.org"
             tag="LIBSOUP_2_39_2"/>
+  </autotools>
+
+  <autotools id="farstream">
+    <branch module="software/farstream/releases/farstream/farstream-0.1.2.tar.gz" version="0.1.2"
+            repo="freedesktop.org"
+            hash="sha256:fa5a40597b47b59d124f7fd57f66704b030d576cdc0d90e107c7a592f05e73d9"
+            md5sum="5d6e561b3688d0d0c8906fec4f356df3"/>
   </autotools>
 
   <autotools id="fontconfig" autogen-sh="configure">

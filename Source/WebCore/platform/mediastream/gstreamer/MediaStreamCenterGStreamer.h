@@ -46,6 +46,7 @@ class MediaStreamComponent;
 class MediaStreamDescriptor;
 class MediaStreamSourcesQueryClient;
 class SessionDescriptionDescriptor;
+class MediaStreamCenterPrivateGStreamer;
 
 class MediaStreamCenterGStreamer : public MediaStreamCenter {
 public:
@@ -61,6 +62,9 @@ public:
     virtual void didCreateMediaStream(MediaStreamDescriptor*) OVERRIDE;
     virtual String constructSDP(IceCandidateDescriptor*) OVERRIDE;
     virtual String constructSDP(SessionDescriptionDescriptor*) OVERRIDE;
+
+private:
+    OwnPtr<MediaStreamCenterPrivateGStreamer> m_private;
 };
 
 } // namespace WebCore
