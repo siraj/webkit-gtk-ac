@@ -38,6 +38,7 @@ namespace WebKit {
 UserMediaClientGtk::UserMediaClientGtk(WebKitWebView *webView)
     : m_webView(webView)
 {
+    // XXX TEMPORARY
     addUserMediaSupport(webView);
 }
 
@@ -47,7 +48,7 @@ UserMediaClientGtk::~UserMediaClientGtk()
 
 void UserMediaClientGtk::pageDestroyed()
 {
-    delete this;
+    // TODO: we should do some clean up here.
 }
 
 void UserMediaClientGtk::requestUserMedia(PassRefPtr<UserMediaRequest> prpRequest, const WebCore::MediaStreamSourceVector& audioSources, const WebCore::MediaStreamSourceVector& videoSources)
@@ -79,7 +80,7 @@ void UserMediaClientGtk::userMediaRequestFailed(UserMediaRequest* request)
 }
 
 //==============================================================================
-// TEMPORARY
+// XXX TEMPORARY
 // The code below this point is moved from the browser to the client to be able
 // to use same UI code in both GtkLauncher and Epiphany.
 //==============================================================================
