@@ -530,8 +530,8 @@ gint CentralPipelineUnit::disconnectSinkFromTee(GstElement* tee, GstElement* sin
             if (peer) {
                 doRemoveSink = false;
                 done = true;
+                gst_object_unref(peer);
             }
-            gst_object_unref(peer);
             gst_object_unref(pad);
             break;
         }
