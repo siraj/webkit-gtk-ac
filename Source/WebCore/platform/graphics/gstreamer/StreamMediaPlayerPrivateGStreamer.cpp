@@ -429,7 +429,8 @@ PlatformMedia StreamMediaPlayerPrivateGStreamer::platformMedia() const
 void StreamMediaPlayerPrivateGStreamer::createGSTVideoSinkBin()
 {
     LOG(MediaStream, "createGSTVideoSinkBin called");
-    m_gstGWorld = GStreamerGWorld::createGWorld(0);
+    GstElement* pipeline = gst_pipeline_new("none");
+    m_gstGWorld = GStreamerGWorld::createGWorld(pipeline);
     m_webkitVideoSink = webkitVideoSinkNew(m_gstGWorld.get());
 
     gchar* name = gst_element_get_name(m_webkitVideoSink);
