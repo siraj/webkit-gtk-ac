@@ -3687,7 +3687,7 @@ static void webkit_web_view_init(WebKitWebView* webView)
 #endif
 
 #if ENABLE(MEDIA_STREAM)
-    priv->userMediaClient = adoptPtr(new UserMediaClientGtk);
+    priv->userMediaClient = adoptPtr(new UserMediaClientGtk(webView));
     WebCore::provideUserMediaTo(priv->corePage, priv->userMediaClient.get());
 #endif
 
@@ -5417,8 +5417,8 @@ void webkit_web_view_accept_user_media_request(WebKitWebView *webView, WebKitWeb
             videoSources.remove(i);
 
     // TODO: uncomment the following lines when the UserMediaClientGtk implementation is completed
-    // UserMediaClientGtk* client = static_cast<UserMediaClientGtk*>(priv->userMediaClient.get());
-    // client->userMediaRequestSucceeded(core(webRequest), audioSources, videoSources);
+    UserMediaClientGtk* client = static_cast<UserMediaClientGtk*>(priv->userMediaClient.get());
+    client->userMediaRequestSucceeded(core(webRequest), audioSources, videoSources);
 }
 
 /**
@@ -5438,8 +5438,8 @@ void webkit_web_view_reject_user_media_request(WebKitWebView *webView, WebKitWeb
     WebKitWebViewPrivate* priv = webView->priv;
 
     // TODO: uncomment thw following lines when the UserMediaClientGtk implementation is completed
-    // UserMediaClientGtk* client = static_cast<UserMediaClientGtk*>(priv->userMediaClient.get());
-    // client->userMediaRequestFailed(core(webRequest));
+    UserMediaClientGtk* client = static_cast<UserMediaClientGtk*>(priv->userMediaClient.get());
+    client->userMediaRequestFailed(core(webRequest));
 }
 #endif // ENABLE(MEDIA_STREAM)
 
