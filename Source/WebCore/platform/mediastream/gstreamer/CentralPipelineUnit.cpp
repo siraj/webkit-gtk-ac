@@ -360,12 +360,9 @@ bool CentralPipelineUnit::disconnectFromSource(const String& sourceId, GstElemen
     gst_object_unref(sourceSrcPad);
 
     // disconnect pad and remove the sink if it has no more pads.
-    gst_pad_set_blocked_async(baseSourcePad, TRUE, NULL, 0);
     guint numSourceTeePads = disconnectSinkFromTee(lTee, sink, sinkpad);
     if (!numSourceTeePads)
         removeSourceExtensionFromBehind(sourceElement);
-
-    gst_pad_set_blocked_async(baseSourcePad, FALSE, NULL, 0);
 
     gst_object_unref(sourceElement);
 
