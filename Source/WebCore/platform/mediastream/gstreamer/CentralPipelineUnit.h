@@ -44,8 +44,6 @@ public:
     void deregisterSourceFactory(const String& sourceId);
     bool connectToSource(const String& sourceId, GstElement* sink, GstPad* sinkPad = 0);
     bool disconnectFromSource(const String& sourceId, GstElement* sink, GstPad* sinkPad = 0);
-    bool insertSource(GstElement* source, GstPad*, const String& sourceId, SourceInsertedCallback, gpointer userData);
-    bool removeSource(const String& sourceId, bool sourceFactoryRemoved);
 
     GstElement* pipeline() const;
 
