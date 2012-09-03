@@ -134,6 +134,16 @@ StreamMediaPlayerPrivateGStreamer::~StreamMediaPlayerPrivateGStreamer()
         m_videoSinkBin = 0;
     }
 
+    if (m_volume) {
+        gst_object_unref(m_volume);
+        m_volume = 0;
+    }
+
+    if (m_webkitVideoSink) {
+        gst_object_unref(m_webkitVideoSink);
+        m_webkitVideoSink = 0;
+    }
+
     m_player = 0;
 
     if (m_muteTimerHandler)
@@ -429,7 +439,7 @@ PlatformMedia StreamMediaPlayerPrivateGStreamer::platformMedia() const
 void StreamMediaPlayerPrivateGStreamer::createGSTVideoSinkBin()
 {
     LOG(MediaStream, "createGSTVideoSinkBin called");
-    GstElement* pipeline = gst_pipeline_new("none");
+    GstElement* pipeline = centralPipelineUnit().pipeline();
     m_gstGWorld = GStreamerGWorld::createGWorld(pipeline);
     m_webkitVideoSink = webkitVideoSinkNew(m_gstGWorld.get());
 
