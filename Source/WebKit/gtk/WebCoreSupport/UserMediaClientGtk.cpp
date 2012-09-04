@@ -51,7 +51,7 @@ void UserMediaClientGtk::pageDestroyed()
     // TODO: we should do some clean up here.
 }
 
-void UserMediaClientGtk::requestUserMedia(PassRefPtr<UserMediaRequest> prpRequest, const WebCore::MediaStreamSourceVector& audioSources, const WebCore::MediaStreamSourceVector& videoSources)
+void UserMediaClientGtk::requestUserMedia(WTF::PassRefPtr<UserMediaRequest> prpRequest, const WebCore::MediaStreamSourceVector& audioSources, const WebCore::MediaStreamSourceVector& videoSources)
 {
     RefPtr<UserMediaRequest> request = prpRequest;
     m_requestSet.add(request);
