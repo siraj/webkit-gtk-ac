@@ -107,7 +107,23 @@ void MediaStreamCenterPrivateGStreamer::didSetMediaStreamTrackEnabled(MediaStrea
 
 void MediaStreamCenterPrivateGStreamer::didStopLocalMediaStream(MediaStreamDescriptor* streamDescriptor)
 {
-    // FIXME
+    LOG(MediaStream, "didStopLocalMediaStream %s", streamDescriptor->label().utf8().data());
+
+    for (unsigned i = 0; i < streamDescriptor->numberOfVideoComponents(); i++) {
+        MediaStreamComponent *component = streamDescriptor->videoComponent(i);
+        MediaStreamSource *source = component->source();
+
+        component->setEnabled(false);
+        source->setReadyState(MediaStreamSource::ReadyStateEnded);
+    }
+
+    for (unsigned i = 0; i < streamDescriptor->numberOfAudioComponents(); i++) {
+        MediaStreamComponent *component = streamDescriptor->audioComponent(i);
+        MediaStreamSource *source = component->source();
+
+        component->setEnabled(false);
+        source->setReadyState(MediaStreamSource::ReadyStateEnded);
+    }
 }
 
 void MediaStreamCenterPrivateGStreamer::registerSourceFactories(const MediaStreamSourceVector& sources)

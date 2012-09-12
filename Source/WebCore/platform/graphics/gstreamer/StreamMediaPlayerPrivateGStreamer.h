@@ -22,8 +22,10 @@
 #if ENABLE(MEDIA_STREAM) && USE(GSTREAMER)
 
 #include "MediaPlayerPrivate.h"
+#include "MediaStream.h"
 #include "TimeRanges.h"
 #include "Timer.h"
+
 
 #include <glib.h>
 #include <gst/gst.h>
@@ -39,7 +41,7 @@ class StreamComponent;
 class MediaStreamDescriptor;
 class GStreamerGWorld;
 
-class StreamMediaPlayerPrivateGStreamer : public MediaPlayerPrivateInterface {
+class StreamMediaPlayerPrivateGStreamer : public MediaPlayerPrivateInterface, private MediaStreamSource::Observer{
     friend void mediaPlayerPrivateRepaintCallback(WebKitVideoSink*, GstBuffer*, StreamMediaPlayerPrivateGStreamer*);
 public:
     ~StreamMediaPlayerPrivateGStreamer();
@@ -105,6 +107,8 @@ public:
 
     bool supportsFullscreen() const;
     PlatformMedia platformMedia() const;
+
+    void sourceChangedState();
 
 private:
     StreamMediaPlayerPrivateGStreamer(MediaPlayer*);

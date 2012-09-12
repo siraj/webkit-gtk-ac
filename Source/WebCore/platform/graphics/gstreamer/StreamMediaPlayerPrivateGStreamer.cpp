@@ -41,6 +41,7 @@
 #include <gst/video/video.h>
 #include <math.h>
 #include <wtf/gobject/GOwnPtr.h>
+#include <wtf/text/CString.h>
 
 
 namespace WebCore {
@@ -156,8 +157,14 @@ StreamMediaPlayerPrivateGStreamer::~StreamMediaPlayerPrivateGStreamer()
 void StreamMediaPlayerPrivateGStreamer::play()
 {
     LOG(MediaStream, "StreamMediaPlayerPrivateGStreamer::play() called.");
-    m_paused = false;
 
+    if (!m_streamDescriptor || m_streamDescriptor->ended()) {
+        m_readyState = MediaPlayer::HaveNothing;
+        loadingFailed(MediaPlayer::Empty);
+        return;
+    }
+
+    m_paused = false;
     internalLoad();
 }
 
@@ -240,7 +247,7 @@ void StreamMediaPlayerPrivateGStreamer::muteChanged()
 
 void StreamMediaPlayerPrivateGStreamer::load(const String &url)
 {
-    // LOG(StreamAPI, "StreamAPI - Stream media player - load");
+    LOG(MediaStream, "StreamAPI - Stream media player - load %s", url.utf8().data());
 
     m_streamDescriptor = MediaStreamRegistry::registry().lookupMediaStreamDescriptor(url);
     if (!m_streamDescriptor || m_streamDescriptor->ended()) {
@@ -505,6 +512,39 @@ void StreamMediaPlayerPrivateGStreamer::createGSTAudioSinkBin()
     gst_object_unref(GST_OBJECT(pad));
 }
 
+void StreamMediaPlayerPrivateGStreamer::sourceChangedState()
+{
+    LOG(MediaStream, "sourceChangedState");
+
+    CentralPipelineUnit& cpu = centralPipelineUnit();
+    if (!m_streamDescriptor || m_streamDescriptor->ended())
+        stop();
+
+    // check if the source should be ended
+    if (!m_audioSourceId.isEmpty()) {
+        for (unsigned i = 0; i < m_streamDescriptor->numberOfAudioComponents(); i++) {
+            MediaStreamComponent* component = m_streamDescriptor->audioComponent(i);
+            if (!component->enabled() && component->source()->id() == m_audioSourceId) {
+                cpu.disconnectFromSource(m_audioSourceId, m_audioSinkBin);
+                m_audioSourceId = "";
+                break;
+            }
+        }
+    }
+
+    // Same check for video
+    if (!m_videoSourceId.isEmpty()) {
+        for (unsigned i = 0; i < m_streamDescriptor->numberOfVideoComponents(); i++) {
+            MediaStreamComponent* component = m_streamDescriptor->videoComponent(i);
+            if (!component->enabled() && component->source()->id() == m_videoSourceId) {
+                cpu.disconnectFromSource(m_videoSourceId, m_videoSinkBin);
+                m_videoSourceId = "";
+                break;
+            }
+        }
+    }
+}
+
 bool StreamMediaPlayerPrivateGStreamer::connectToGSTLiveStream(MediaStreamDescriptor* streamDescriptor)
 {
     LOG(MediaStream, "connectToGSTLiveStream called");
@@ -534,7 +574,7 @@ bool StreamMediaPlayerPrivateGStreamer::connectToGSTLiveStream(MediaStreamDescri
         if (source->type() == MediaStreamSource::TypeAudio) {
             if (cpu.connectToSource(source->id(), m_audioSinkBin)) {
                 m_audioSourceId = source->id();
-                // FIXME: Break since we don't support mixing of audio tracks yet.
+                source->addObserver(this);
                 break;
             }
         }
@@ -549,7 +589,7 @@ bool StreamMediaPlayerPrivateGStreamer::connectToGSTLiveStream(MediaStreamDescri
         if (source->type() == MediaStreamSource::TypeVideo) {
             if (cpu.connectToSource(source->id(), m_videoSinkBin)) {
                 m_videoSourceId = source->id();
-                // FIXME: Break since we don't support mixing of audio tracks yet.
+                source->addObserver(this);
                 break;
             }
         }
