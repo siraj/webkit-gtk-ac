@@ -23,11 +23,15 @@
 #include <wtf/gobject/GRefPtr.h>
 
 typedef struct _ClutterActor ClutterActor;
+typedef struct _GraphicsLayerActor GraphicsLayerActor;
 
 namespace WTF {
 
 template<> ClutterActor* refGPtr<ClutterActor>(ClutterActor* ptr);
 template<> void derefGPtr<ClutterActor>(ClutterActor* ptr);
+
+template<> GraphicsLayerActor* refGPtr<GraphicsLayerActor>(GraphicsLayerActor* ptr);
+template<> void derefGPtr<GraphicsLayerActor>(GraphicsLayerActor* ptr);
 
 }
 

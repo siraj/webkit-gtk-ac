@@ -50,4 +50,30 @@ template <> void derefGPtr<ClutterActor>(ClutterActor* ptr)
         g_object_unref(ptr);
 }
 
+template <> GRefPtr<GraphicsLayerActor> adoptGRef(GraphicsLayerActor* ptr)
+{
+    if (g_object_is_floating(ptr))
+        g_object_ref_sink(ptr);
+
+    return GRefPtr<GraphicsLayerActor>(ptr, GRefPtrAdopt);
+}
+
+template <> GraphicsLayerActor* refGPtr<GraphicsLayerActor>(GraphicsLayerActor* ptr)
+{
+    if (ptr) {
+        if (g_object_is_floating(ptr))
+            g_object_ref_sink(ptr);
+
+        g_object_ref(ptr);
+    }
+
+    return ptr;
+}
+
+template <> void derefGPtr<GraphicsLayerActor>(GraphicsLayerActor* ptr)
+{
+    if (ptr)
+        g_object_unref(ptr);
+}
+
 }
