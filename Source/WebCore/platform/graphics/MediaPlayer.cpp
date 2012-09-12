@@ -392,8 +392,6 @@ void MediaPlayer::loadWithNextMediaEngine(MediaPlayerFactory* current)
 {
     MediaPlayerFactory* engine = 0;
 
-    LOG(MediaStream, "=========== content type %s", m_contentMIMEType.utf8().data());
-
     if (!m_contentMIMEType.isEmpty())
         engine = bestMediaEngineForTypeAndCodecs(m_contentMIMEType, m_contentTypeCodecs, m_keySystem, m_url, current);
 
