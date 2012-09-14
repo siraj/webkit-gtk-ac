@@ -31,7 +31,6 @@
 
 #include "GraphicsContext.h"
 #include "GraphicsLayer.h"
-#include "PlatformString.h"
 #include <glib.h>
 #include <wtf/HashMap.h>
 #include <wtf/PassRefPtr.h>
