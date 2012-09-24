@@ -49,6 +49,7 @@ gboolean timerDebugDot(gpointer data)
     LOG(MediaStream, "Maybe writing dotfile %s", dotName);
     GST_DEBUG_BIN_TO_DOT_FILE(bin, static_cast<GstDebugGraphDetails>(GST_DEBUG_GRAPH_SHOW_MEDIA_TYPE | GST_DEBUG_GRAPH_SHOW_NON_DEFAULT_PARAMS | GST_DEBUG_GRAPH_SHOW_STATES), dotName);
     g_free(dotName);
+    g_free(binName);
 
     return true;
 }

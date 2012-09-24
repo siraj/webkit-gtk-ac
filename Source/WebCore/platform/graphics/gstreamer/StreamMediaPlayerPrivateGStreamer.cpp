@@ -105,7 +105,7 @@ StreamMediaPlayerPrivateGStreamer::StreamMediaPlayerPrivateGStreamer(MediaPlayer
     , m_muteTimerHandler(0)
     , m_repaintCallbackHandlerId(0)
 {
-    // LOG(StreamAPI, "StreamAPI - Creating Stream media player");
+    LOG(MediaStream, "SreamMediaPlayer - Creating Stream media player");
 
     if (doGstInit()) {
         createGSTVideoSinkBin();
@@ -140,10 +140,13 @@ StreamMediaPlayerPrivateGStreamer::~StreamMediaPlayerPrivateGStreamer()
         m_volume = 0;
     }
 
+#ifndef GST_API_VERSION_1
+
     if (m_webkitVideoSink) {
         gst_object_unref(m_webkitVideoSink);
         m_webkitVideoSink = 0;
     }
+#endif
 
     m_player = 0;
 
@@ -256,7 +259,7 @@ void StreamMediaPlayerPrivateGStreamer::load(const String &url)
     }
 
     m_readyState = MediaPlayer::HaveNothing;
-    m_networkState = MediaPlayer::Empty;
+    m_networkState = MediaPlayer::Loading;
     m_player->networkStateChanged();
     m_player->readyStateChanged();
 
@@ -271,8 +274,6 @@ void StreamMediaPlayerPrivateGStreamer::load(const String &url)
         m_readyState = MediaPlayer::HaveEnoughData;
     }
 
-    m_networkState = MediaPlayer::Loaded;
-    m_player->networkStateChanged();
     m_player->readyStateChanged();
 
 }
