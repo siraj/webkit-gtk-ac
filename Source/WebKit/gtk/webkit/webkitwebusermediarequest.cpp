@@ -27,9 +27,8 @@
 #include "SecurityOrigin.h"
 #include "UserMediaRequest.h"
 #include "webkitglobalsprivate.h"
+#include "webkitsecurityoriginprivate.h"
 #include "webkitwebusermediarequestprivate.h"
-#include <glib.h>
-#include <glib/gi18n-lib.h>
 #include <wtf/text/CString.h>
 
 /**
@@ -49,10 +48,20 @@ struct _WebKitWebUserMediaRequestPrivate {
     RefPtr<WebCore::UserMediaRequest> userMediaRequest;
 };
 
-G_DEFINE_TYPE(WebKitWebUserMediaRequest, webkit_web_user_media_request, G_TYPE_OBJECT);
+G_DEFINE_TYPE(WebKitWebUserMediaRequest, webkit_web_user_media_request, G_TYPE_OBJECT)
+
+static void webkitWebUserMediaRequestFinalize(GObject *object)
+{
+    WEBKIT_WEB_USER_MEDIA_REQUEST(object)->priv->~WebKitWebUserMediaRequestPrivate();
+
+    G_OBJECT_CLASS(webkit_web_user_media_request_parent_class)->finalize(object);
+}
 
 static void webkit_web_user_media_request_class_init(WebKitWebUserMediaRequestClass* requestClass)
 {
+    GObjectClass* gobject_class = G_OBJECT_CLASS(requestClass);
+    gobject_class->finalize = webkitWebUserMediaRequestFinalize;
+
     webkitInit();
 
     g_type_class_add_private(requestClass, sizeof(WebKitWebUserMediaRequestPrivate));
@@ -62,6 +71,8 @@ static void webkit_web_user_media_request_init(WebKitWebUserMediaRequest* reques
 {
     WebKitWebUserMediaRequestPrivate* priv = G_TYPE_INSTANCE_GET_PRIVATE(request, WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST, WebKitWebUserMediaRequestPrivate);
     request->priv = priv;
+
+    new (priv) WebKitWebUserMediaRequestPrivate();
 }
 
 /**
@@ -102,31 +113,31 @@ gboolean webkit_web_user_media_request_wants_video(WebKitWebUserMediaRequest* re
  * webkit_web_user_media_request_get_origin:
  * @request: the #WebKitUserMediaRequest itself.
  *
- * The origin of a media request.
+ * Returns the security origin of the Media Request.
  *
- * Return value: string with the origin of a media request.
+ * Return value: (transfer none): the security origin of the media request.
  *
  * Since: 1.10.0
  */
-const gchar* webkit_web_user_media_request_get_origin(WebKitWebUserMediaRequest* request)
+WebKitSecurityOrigin* webkit_web_user_media_request_get_security_origin(WebKitWebUserMediaRequest* request)
 {
-    g_return_val_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(request), NULL);
+    g_return_val_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(request), 0);
 
-    return core(request)->scriptExecutionContext()->securityOrigin()->toString().utf8().data();
+    return kit(core(request)->scriptExecutionContext()->securityOrigin());
 }
 
 namespace WebKit {
 
 WebCore::UserMediaRequest* core(WebKitWebUserMediaRequest* request)
 {
-    g_return_val_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(request), NULL);
+    g_return_val_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(request), 0);
 
     return request->priv->userMediaRequest.get();
 }
 
 WebKitWebUserMediaRequest* kitNew(WebCore::UserMediaRequest* request)
 {
-    g_return_val_if_fail(request, NULL);
+    g_return_val_if_fail(request, 0);
 
     WebKitWebUserMediaRequest* webRequest = WEBKIT_WEB_USER_MEDIA_REQUEST(g_object_new(WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST, NULL));
     webRequest->priv->userMediaRequest = request;

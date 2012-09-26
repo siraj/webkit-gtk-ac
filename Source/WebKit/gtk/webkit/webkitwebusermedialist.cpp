@@ -22,13 +22,9 @@
 
 #include "webkitwebusermedialist.h"
 
-#include "MediaStreamSource.h"
 #include "webkitglobalsprivate.h"
 #include "webkitwebusermedialistprivate.h"
 
-#include <glib.h>
-#include <glib/gi18n-lib.h>
-#include <stdio.h>
 #include <wtf/text/CString.h>
 
 
@@ -47,30 +43,32 @@ using namespace WebKit;
 
 struct _WebKitWebUserMediaListPrivate {
     WebCore::MediaStreamSourceVector sources;
-    gboolean* sourceSelections;
+    Vector<bool> sourceSelections;
 };
 
-G_DEFINE_TYPE(WebKitWebUserMediaList, webkit_web_user_media_list, G_TYPE_OBJECT);
+G_DEFINE_TYPE(WebKitWebUserMediaList, webkit_web_user_media_list, G_TYPE_OBJECT)
 
-static void webkit_web_user_media_list_dispose(GObject* object)
+static void webkitWebUserMediaListDispose(GObject* object)
 {
+    WebKitWebUserMediaList* userMediaList = WEBKIT_WEB_USER_MEDIA_LIST(object);
+    WebKitWebUserMediaListPrivate* priv = userMediaList->priv;
+
+    priv->sourceSelections.clear();
+
     G_OBJECT_CLASS(webkit_web_user_media_list_parent_class)->dispose(object);
 }
 
-static void webkit_web_user_media_list_finalize(GObject* object)
+static void webkitWebUserMediaListFinalize(GObject* object)
 {
-    WebKitWebUserMediaList* userMediaList = WEBKIT_WEB_USER_MEDIA_LIST(object);
-
-    g_free(userMediaList->priv->sourceSelections);
-
+    WEBKIT_WEB_USER_MEDIA_LIST(object)->priv->~WebKitWebUserMediaListPrivate();
     G_OBJECT_CLASS(webkit_web_user_media_list_parent_class)->finalize(object);
 }
 
 static void webkit_web_user_media_list_class_init(WebKitWebUserMediaListClass* listClass)
 {
     GObjectClass* gobject_class = G_OBJECT_CLASS(listClass);
-    gobject_class->dispose = webkit_web_user_media_list_dispose;
-    gobject_class->finalize = webkit_web_user_media_list_finalize;
+    gobject_class->dispose = webkitWebUserMediaListDispose;
+    gobject_class->finalize = webkitWebUserMediaListFinalize;
 
     webkitInit();
 
@@ -81,6 +79,9 @@ static void webkit_web_user_media_list_init(WebKitWebUserMediaList* list)
 {
     WebKitWebUserMediaListPrivate* priv = G_TYPE_INSTANCE_GET_PRIVATE(list, WEBKIT_TYPE_WEB_USER_MEDIA_LIST, WebKitWebUserMediaListPrivate);
     list->priv = priv;
+
+    // placement new syntax
+    new (priv) WebKitWebUserMediaListPrivate();
 }
 
 /**
@@ -123,7 +124,7 @@ const gchar* webkit_web_user_media_list_get_item_name(WebKitWebUserMediaList* li
 }
 
 /**
- * webkit_web_user_media_list_get_item_selected:
+ * webkit_web_user_media_list_is_item_selected:
  * @list: the #WebKitWebUserMediaList itself
  * @index: the wanted element index.
  *
@@ -133,12 +134,11 @@ const gchar* webkit_web_user_media_list_get_item_name(WebKitWebUserMediaList* li
  *
  * Since: 1.10.0
  */
-gboolean webkit_web_user_media_list_get_item_selected(WebKitWebUserMediaList* list, guint index)
+gboolean webkit_web_user_media_list_is_item_selected(WebKitWebUserMediaList* list, guint index)
 {
     g_return_val_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(list), FALSE);
 
-    WebCore::MediaStreamSourceVector& sources = core(list);
-    g_return_val_if_fail(index < sources.size(), FALSE);
+    g_return_val_if_fail(index < core(list).size(), FALSE);
 
     return list->priv->sourceSelections[index];
 }
@@ -156,8 +156,7 @@ void webkit_web_user_media_list_select_item(WebKitWebUserMediaList* list, guint 
 {
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(list));
 
-    WebCore::MediaStreamSourceVector& sources = core(list);
-    g_return_if_fail(index < sources.size());
+    g_return_if_fail(index < core(list).size());
 
     list->priv->sourceSelections[index] = TRUE;
 }
@@ -173,7 +172,7 @@ WebKitWebUserMediaList* kitNew(const WebCore::MediaStreamSourceVector& sources)
 {
     WebKitWebUserMediaList* webList = WEBKIT_WEB_USER_MEDIA_LIST(g_object_new(WEBKIT_TYPE_WEB_USER_MEDIA_LIST, NULL));
     webList->priv->sources = sources;
-    webList->priv->sourceSelections = g_new0(gboolean, sources.size());
+    webList->priv->sourceSelections.fill(FALSE, sources.size());
 
     return webList;
 }

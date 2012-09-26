@@ -83,6 +83,7 @@
 #include "RuntimeEnabledFeatures.h"
 #include "ScriptValue.h"
 #include "Settings.h"
+#include "UserMediaClientGtk.h"
 #include "webkit/WebKitDOMDocumentPrivate.h"
 #include "webkitdownload.h"
 #include "webkitdownloadprivate.h"
@@ -103,10 +104,12 @@
 #include "webkitwebhistoryitemprivate.h"
 #include "webkitwebinspector.h"
 #include "webkitwebinspectorprivate.h"
+#include "webkitwebplugindatabaseprivate.h"
 #include "webkitwebpolicydecision.h"
 #include "webkitwebresource.h"
 #include "webkitwebsettingsprivate.h"
-#include "webkitwebplugindatabaseprivate.h"
+#include "webkitwebusermedialistprivate.h"
+#include "webkitwebusermediarequestprivate.h"
 #include "webkitwebwindowfeatures.h"
 #include "webkitwebviewprivate.h"
 #include <gdk/gdkkeysyms.h>
@@ -119,13 +122,6 @@
 #include "DeviceOrientationClientGtk.h"
 #endif
 
-#if ENABLE(MEDIA_STREAM)
-#include "MediaStreamSource.h"
-#include "UserMediaClientGtk.h"
-#include "webkitwebusermedialist.h"
-#include "webkitwebusermedialistprivate.h"
-#include "webkitwebusermediarequestprivate.h"
-#endif
 
 /**
  * SECTION:webkitwebview
@@ -2736,10 +2732,8 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
             G_TYPE_NONE, 1,
             WEBKIT_TYPE_VIEWPORT_ATTRIBUTES);
 
-#if ENABLE(MEDIA_STREAM)
-
-    /*
-     * WebKitWebView::user-media-requested
+    /**
+     * WebKitWebView::user-media-requested:
      * @web_view: the object which received the signal
      * @request: the #WebKitWebUserMediaRquest attribute which generated the request.
      * @audioList: a #WebKitWebUserMediaList containing the available audio media options.
@@ -2748,11 +2742,14 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
      * When the application request userMedia, this signal will be emited with the request
      * information and the available options to be selected.
      *
+     * Then the user is expected to call either #webkit_web_view_accept_user_media_request() or
+     * webkit_web_view_reject_user_media_request() to accept or reject the request.
+     *
      * Since: 1.10.0
      */
     webkit_web_view_signals[USER_MEDIA_REQUESTED] = g_signal_new("user-media-requested",
             G_TYPE_FROM_CLASS(webViewClass),
-            (GSignalFlags)(G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION),
+            G_SIGNAL_RUN_LAST,
             0,
             0, 0,
             webkit_marshal_VOID__OBJECT_OBJECT_OBJECT,
@@ -2761,8 +2758,9 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
             WEBKIT_TYPE_WEB_USER_MEDIA_LIST,
             WEBKIT_TYPE_WEB_USER_MEDIA_LIST);
 
-    /*
-     * WebKitWebView::user-media-request-cancelled
+
+    /**
+     * WebKitWebView::user-media-request-cancelled:
      * @web_view: the object which received the signal
      * @request: the #WebKitWebUserMediaRquest itself
      *
@@ -2772,14 +2770,13 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
      */
     webkit_web_view_signals[USER_MEDIA_REQUEST_CANCELLED] = g_signal_new("user-media-request-cancelled",
             G_TYPE_FROM_CLASS(webViewClass),
-            (GSignalFlags)(G_SIGNAL_RUN_LAST | G_SIGNAL_ACTION),
+            G_SIGNAL_RUN_LAST,
             0,
             0, 0,
             webkit_marshal_VOID__OBJECT,
             G_TYPE_NONE, 1,
             WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST);
 
-#endif /* ENABLE(MEDIA_STREAM) */
 
     /**
      * WebKitWebView::entering-fullscreen:
@@ -5383,7 +5380,6 @@ void webViewExitFullscreen(WebKitWebView* webView)
 #endif
 }
 
-#if ENABLE(MEDIA_STREAM)
 /**
  * webkit_web_view_accept_user_media_request:
  * @webView: a #WebKitWebView
@@ -5396,7 +5392,7 @@ void webViewExitFullscreen(WebKitWebView* webView)
  *
  * Since: 1.10.0
  **/
-void webkit_web_view_accept_user_media_request(WebKitWebView *webView, WebKitWebUserMediaRequest *webRequest, WebKitWebUserMediaList *audioMediaList, WebKitWebUserMediaList *videoMediaList)
+void webkit_web_view_accept_user_media_request(WebKitWebView* webView, WebKitWebUserMediaRequest* webRequest, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
 {
     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
@@ -5409,11 +5405,11 @@ void webkit_web_view_accept_user_media_request(WebKitWebView *webView, WebKitWeb
     MediaStreamSourceVector& videoSources = core(videoMediaList);
 
     for (size_t i = audioSources.size() - 1; i != (size_t) -1; --i)
-        if (!webkit_web_user_media_list_get_item_selected(audioMediaList, i))
+        if (!webkit_web_user_media_list_is_item_selected(audioMediaList, i))
             audioSources.remove(i);
 
     for (size_t i = videoSources.size() - 1; i != (size_t) -1; --i)
-        if (!webkit_web_user_media_list_get_item_selected(videoMediaList, i))
+        if (!webkit_web_user_media_list_is_item_selected(videoMediaList, i))
             videoSources.remove(i);
 
     // TODO: uncomment the following lines when the UserMediaClientGtk implementation is completed
@@ -5441,7 +5437,6 @@ void webkit_web_view_reject_user_media_request(WebKitWebView *webView, WebKitWeb
     UserMediaClientGtk* client = static_cast<UserMediaClientGtk*>(priv->userMediaClient.get());
     client->userMediaRequestFailed(core(webRequest));
 }
-#endif // ENABLE(MEDIA_STREAM)
 
 #if ENABLE(ICONDATABASE)
 void webkitWebViewIconLoaded(WebKitFaviconDatabase* database, const char* frameURI, WebKitWebView* webView)
