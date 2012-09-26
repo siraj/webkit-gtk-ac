@@ -28,6 +28,7 @@
 #include "PlatformClutterLayerClient.h"
 #include "PlatformContextCairo.h"
 #include "RefPtrCairo.h"
+#include "Logging.h"
 #include <glib/gprintf.h>
 
 using namespace WebCore;
@@ -251,6 +252,7 @@ static void graphicsLayerActorAllocate(ClutterActor* self, const ClutterActorBox
 
 static void graphicsLayerActorApplyTransform(ClutterActor* actor, CoglMatrix* matrix)
 {
+    LOG(AcceleratedCompositing, "%s, actor=%p, %s", __func__, actor, clutter_actor_get_name(actor));
     GraphicsLayerActorPrivate* priv = GRAPHICS_LAYER_ACTOR(actor)->priv;
 
     // Apply translation and scrolling as a single translation. These
@@ -289,6 +291,8 @@ static void graphicsLayerActorApplyTransform(ClutterActor* actor, CoglMatrix* ma
 
 static void graphicsLayerActorPaint(ClutterActor* actor)
 {
+
+    LOG(AcceleratedCompositing, "%s, actor=%p, %s", __func__, actor, clutter_actor_get_name(actor));
     GraphicsLayerActor* graphicsLayer = GRAPHICS_LAYER_ACTOR(actor);
     GraphicsLayerActorPrivate* priv = GRAPHICS_LAYER_ACTOR(actor)->priv;
 
@@ -386,12 +390,16 @@ static void graphicsLayerActorUpdateTexture(GraphicsLayerActor* layer)
     ClutterActor* actor = CLUTTER_ACTOR(layer);
     int width = ceilf(clutter_actor_get_width(actor));
     int height = ceilf(clutter_actor_get_height(actor));
-
+/*
     priv->texture = CLUTTER_ACTOR(g_object_new(CLUTTER_TYPE_CAIRO_TEXTURE,
                                                "auto-resize", TRUE,
                                                "surface-height", width > 0 ? width : 1,
                                                "surface-width", height > 0 ? height : 1,
                                                0));
+
+*/
+    priv->texture = clutter_cairo_texture_new(width > 0 ? width : 1, height > 0 ? height : 1);
+    clutter_cairo_texture_set_auto_resize(CLUTTER_CAIRO_TEXTURE(priv->texture), TRUE);
 
     clutter_actor_set_parent(priv->texture, actor);
 
@@ -489,8 +497,14 @@ void graphicsLayerActorInvalidateRectangle(GraphicsLayerActor* layer, const Floa
     if (!priv->texture)
         return;
 
-    cairo_rectangle_int_t rect(enclosingIntRect(dirtyRect));
-    clutter_cairo_texture_invalidate_rectangle(CLUTTER_CAIRO_TEXTURE(priv->texture), &rect);
+    if (CLUTTER_IS_CAIRO_TEXTURE (priv->texture))
+    {
+        cairo_rectangle_int_t rect(enclosingIntRect(dirtyRect));
+        clutter_cairo_texture_invalidate_rectangle(CLUTTER_CAIRO_TEXTURE(priv->texture), &rect);
+
+    } else {
+        clutter_actor_queue_redraw(priv->texture);
+    }
 }
 
 void graphicsLayerActorSetTransform(GraphicsLayerActor* layer, const CoglMatrix* matrix)

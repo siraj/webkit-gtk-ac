@@ -63,6 +63,8 @@ WTFLogChannel LogArchives =          { 0x04000000, "WebCoreLogLevel", WTFLogChan
 WTFLogChannel LogProgress =          { 0x08000000, "WebCoreLogLevel", WTFLogChannelOff };
 
 WTFLogChannel LogFileAPI =           { 0x10000000, "WebCoreLogLevel", WTFLogChannelOff };
+WTFLogChannel LogAcceleratedCompositing = { 0x20000000, "WebCoreLogLevel", WTFLogChannelOff };
+WTFLogChannel LogAcceleratedAnimation = { 0x12000000, "WebCoreLogLevel", WTFLogChannelOff };
 
 WTFLogChannel LogWebAudio =          { 0x20000000, "WebCoreLogLevel", WTFLogChannelOff };
 WTFLogChannel LogCompositing =       { 0x40000000, "WebCoreLogLevel", WTFLogChannelOff };
@@ -142,6 +144,12 @@ WTFLogChannel* getChannelFromName(const String& channelName)
 
     if (equalIgnoringCase(channelName, String("FileAPI")))
         return &LogFileAPI;
+
+    if (equalIgnoringCase(channelName, String("AcceleratedCompositing")))
+        return &LogAcceleratedCompositing;
+
+    if (equalIgnoringCase(channelName, String("AcceleratedAnimation")))
+        return &LogAcceleratedAnimation;
 
     if (equalIgnoringCase(channelName, String("WebAudio")))
         return &LogWebAudio;

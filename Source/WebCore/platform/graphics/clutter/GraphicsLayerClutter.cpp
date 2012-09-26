@@ -45,6 +45,7 @@ namespace WebCore {
 // compositing with GraphicsLayerClutter.
 PassOwnPtr<GraphicsLayer> GraphicsLayer::create(GraphicsLayerClient* client)
 {
+    LOG(AcceleratedCompositing, "GraphicsLayerClutter::%s1", __func__);
     return adoptPtr(new GraphicsLayerClutter(client));
 }
 
@@ -52,7 +53,11 @@ GraphicsLayerClutter::GraphicsLayerClutter(GraphicsLayerClient* client)
     : GraphicsLayer(client)
     , m_uncommittedChanges(0)
 {
+    LOG(AcceleratedCompositing, "GraphicsLayerClutter::%s Create a LayerTypeWebLayer", __func__);
+
     m_layer = adoptGRef(graphicsLayerActorNewWithClient(LayerTypeWebLayer, this));
+
+    updateDebugIndicators();
 }
 
 static gboolean idleDestroy(gpointer data)
@@ -72,11 +77,14 @@ static gboolean idleDestroy(gpointer data)
     // of them are getting here with 2!
     // ASSERT((G_OBJECT(actor.get()))->ref_count == 1);
 
+
     return FALSE;
 }
 
 GraphicsLayerClutter::~GraphicsLayerClutter()
 {
+    GraphicsLayer::willBeDestroyed();
+
     // The root layer is removed in webkit_iweb_view_detach_root_graphics_layer.
     if (graphicsLayerActorGetLayerType(m_layer.get()) == GraphicsLayerClutter::LayerTypeRootLayer)
         return;
@@ -87,18 +95,23 @@ GraphicsLayerClutter::~GraphicsLayerClutter()
         graphicsLayerActorSetClient(m_layer.get(), 0);
         g_idle_add(idleDestroy, m_layer.leakRef());
     }
+
+    m_client = 0;
 }
 
 void GraphicsLayerClutter::setName(const String& name)
 {
     String longName = String::format("Actor(%p) GraphicsLayer(%p) ", m_layer.get(), this) + name;
+    LOG(AcceleratedCompositing, "GraphicsLayerClutter::%s name = %s", __func__,
+            longName.utf8().data());
+
     GraphicsLayer::setName(longName);
     noteLayerPropertyChanged(NameChanged);
 }
 
 ClutterActor* GraphicsLayerClutter::platformLayer() const
 {
-    return CLUTTER_ACTOR(m_layer.get());
+    return CLUTTER_ACTOR(primaryLayer());
 }
 
 void GraphicsLayerClutter::setNeedsDisplay()
@@ -144,6 +157,9 @@ void GraphicsLayerClutter::setAnchorPoint(const FloatPoint3D& point)
 
 void GraphicsLayerClutter::setPosition(const FloatPoint& point)
 {
+    LOG(AcceleratedCompositing, "GraphicsLayerClutter::%s(%f, %f) %p", __func__, point.x(),
+            point.y(), primaryLayer());
+
     if (point == m_position)
         return;
 
@@ -153,6 +169,8 @@ void GraphicsLayerClutter::setPosition(const FloatPoint& point)
 
 void GraphicsLayerClutter::setSize(const FloatSize& size)
 {
+    LOG(AcceleratedCompositing, "GraphicsLayerClutter::%s", __func__);
+    LOG(AcceleratedCompositing, "size(%f, %f)", size.width(), size.height());
     if (size == m_size)
         return;
 

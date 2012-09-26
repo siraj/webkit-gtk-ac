@@ -26,6 +26,7 @@
 #include "FrameView.h"
 #include "GraphicsLayer.h"
 #include "NotImplemented.h"
+#include "Logging.h"
 #include "webkitwebviewprivate.h"
 #include <clutter-gtk/clutter-gtk.h>
 #include <clutter/clutter.h>
@@ -40,6 +41,7 @@ AcceleratedCompositingContext::AcceleratedCompositingContext(WebKitWebView* webV
     , m_rootGraphicsLayer(0)
     , m_rootLayerEmbedder(0)
 {
+    LOG(AcceleratedCompositing, "** Clutter -> AcceleratedCompositingContext::AcceleratedCompositingContext\n");
 }
 
 AcceleratedCompositingContext::~AcceleratedCompositingContext()
@@ -50,6 +52,7 @@ AcceleratedCompositingContext::~AcceleratedCompositingContext()
 
 bool AcceleratedCompositingContext::enabled()
 {
+    //LOG(AcceleratedCompositing, "** Clutter -> AcceleratedCompositingContext::enabled() \n");
     return m_rootGraphicsLayer;
 }
 
@@ -61,6 +64,8 @@ bool AcceleratedCompositingContext::renderLayersToWindow(cairo_t*, const IntRect
 
 void AcceleratedCompositingContext::setRootCompositingLayer(GraphicsLayer* graphicsLayer)
 {
+
+    LOG(AcceleratedCompositing, "** Clutter ->AcceleratedCompositingContext::setRootCompositingLayer() \n");
     if (!graphicsLayer) {
         gtk_container_remove(GTK_CONTAINER(m_webView), m_rootLayerEmbedder);
         m_rootLayerEmbedder = 0;
