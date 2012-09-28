@@ -5399,8 +5399,6 @@ void webkit_web_view_accept_user_media_request(WebKitWebView* webView, WebKitWeb
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(audioMediaList));
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(videoMediaList));
 
-    WebKitWebViewPrivate* priv = webView->priv;
-
     MediaStreamSourceVector& audioSources = core(audioMediaList);
     MediaStreamSourceVector& videoSources = core(videoMediaList);
 
@@ -5412,9 +5410,7 @@ void webkit_web_view_accept_user_media_request(WebKitWebView* webView, WebKitWeb
         if (!webkit_web_user_media_list_is_item_selected(videoMediaList, i))
             videoSources.remove(i);
 
-    // TODO: uncomment the following lines when the UserMediaClientGtk implementation is completed
-    UserMediaClientGtk* client = static_cast<UserMediaClientGtk*>(priv->userMediaClient.get());
-    client->userMediaRequestSucceeded(core(webRequest), audioSources, videoSources);
+    core(webRequest)->succeed(audioSources, videoSources);
 }
 
 /**
@@ -5431,11 +5427,7 @@ void webkit_web_view_reject_user_media_request(WebKitWebView *webView, WebKitWeb
     g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
 
-    WebKitWebViewPrivate* priv = webView->priv;
-
-    // TODO: uncomment thw following lines when the UserMediaClientGtk implementation is completed
-    UserMediaClientGtk* client = static_cast<UserMediaClientGtk*>(priv->userMediaClient.get());
-    client->userMediaRequestFailed(core(webRequest));
+    core(webRequest)->fail();
 }
 
 #if ENABLE(ICONDATABASE)

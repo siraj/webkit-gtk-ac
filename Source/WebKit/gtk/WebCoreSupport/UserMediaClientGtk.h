@@ -46,13 +46,8 @@ public:
     virtual void requestUserMedia(WTF::PassRefPtr<WebCore::UserMediaRequest>, const WebCore::MediaStreamSourceVector&, const WebCore::MediaStreamSourceVector&);
     virtual void cancelUserMediaRequest(WebCore::UserMediaRequest*);
 
-    virtual void userMediaRequestSucceeded(WebCore::UserMediaRequest*, const WebCore::MediaStreamSourceVector&, const WebCore::MediaStreamSourceVector&);
-    virtual void userMediaRequestFailed(WebCore::UserMediaRequest*);
-
 private:
     WebKitWebView* m_webView;
-
-    HashSet<RefPtr<WebCore::UserMediaRequest> > m_requestSet;
 };
 
 }

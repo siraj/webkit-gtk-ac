@@ -50,27 +50,12 @@ void UserMediaClientGtk::pageDestroyed()
 void UserMediaClientGtk::requestUserMedia(WTF::PassRefPtr<UserMediaRequest> prpRequest, const WebCore::MediaStreamSourceVector& audioSources, const WebCore::MediaStreamSourceVector& videoSources)
 {
     RefPtr<UserMediaRequest> request = prpRequest;
-    m_requestSet.add(request);
-
     g_signal_emit_by_name(m_webView, "user-media-requested", kitNew(request.get()), kitNew(audioSources), kitNew(videoSources));
 }
 
 void UserMediaClientGtk::cancelUserMediaRequest(UserMediaRequest* request)
 {
-    ASSERT(m_requestSet.contains(request));
     g_signal_emit_by_name(m_webView, "user-media-request-cancelled", 0);
-}
-
-void UserMediaClientGtk::userMediaRequestSucceeded(UserMediaRequest* request, const MediaStreamSourceVector& audioSources, const MediaStreamSourceVector& videoSources)
-{
-    request->succeed(audioSources, videoSources);
-    m_requestSet.remove(request);
-}
-
-void UserMediaClientGtk::userMediaRequestFailed(UserMediaRequest* request)
-{
-    request->fail();
-    m_requestSet.remove(request);
 }
 
 }
