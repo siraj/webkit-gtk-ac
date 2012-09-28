@@ -166,8 +166,9 @@ GstElementFactory* MediaStreamCenterPrivateGStreamer::storedElementFactory(const
 
 String MediaStreamCenterPrivateGStreamer::storeSourceInfo(MediaStreamSource::Type type, const String& factoryKey, const String& device)
 {
-    String key = factoryKey + ";";
-    key += device;
+    String key = String(factoryKey);
+    key.append(";");
+    key.append(device);
 
     SourceInfoMap::iterator sourceInfoIt = m_sourceInfoMap.find(key);
     if (sourceInfoIt != m_sourceInfoMap.end())
@@ -278,8 +279,8 @@ static void probeSource(GstElement* source, const String& key, MediaStreamSource
             String sourceName = String(deviceName);
 
             String deviceId = key;
-            deviceId += ";";
-            deviceId += device;
+            deviceId.append(";");
+            deviceId.append(device);
 
             gchar* sourceElementName = gst_element_get_name(source);
             if (!g_strcmp0(sourceElementName, "autosrc-actual-src-puls"))

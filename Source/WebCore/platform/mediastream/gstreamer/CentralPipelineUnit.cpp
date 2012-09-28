@@ -256,9 +256,6 @@ bool CentralPipelineUnit::disconnectFromSource(const String& sourceId, GstElemen
         }
     }
 
-    Source& source = sourceIt->second;
-    GstPad* baseSourcePad = source.m_sourcePad.get();
-
     GstPad* lQueueSrcPad = gst_pad_get_peer(sinkpad);
     GstElement* lQueue = gst_pad_get_parent_element(lQueueSrcPad);
     gst_object_unref(lQueueSrcPad);
@@ -762,8 +759,8 @@ static gboolean messageCallback(GstBus* bus, GstMessage* message, gpointer data)
 static String generateElementPadId(GstElement* element, GstPad* pad)
 {
     String id(String::number(gulong(element)));
-    id += "_";
-    id += String::number(gulong(pad));
+    id.append("_");
+    id.append(String::number(gulong(pad)));
     return id;
 }
 
