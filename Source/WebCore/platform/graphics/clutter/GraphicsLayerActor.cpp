@@ -45,6 +45,7 @@ struct _GraphicsLayerActorPrivate {
     ClutterActor* texture;
     RefPtr<cairo_surface_t> surface;
     CoglMatrix* matrix;
+    CoglMatrix* childrenMatrix;
 
     PlatformClutterLayerClient* layerClient;
 
@@ -59,10 +60,36 @@ struct _GraphicsLayerActorPrivate {
 
     float translateX;
     float translateY;
+
+    gboolean flattenMatrix;
 };
 
 enum {
     PROP_0,
+
+    PROP_DOUBLE_SIDED,
+    PROP_FLATTEN_MATRIX,
+    PROP_ANIMATED,
+
+    PROP_MATRIX_XX,
+    PROP_MATRIX_YX,
+    PROP_MATRIX_ZX,
+    PROP_MATRIX_WX,
+
+    PROP_MATRIX_XY,
+    PROP_MATRIX_YY,
+    PROP_MATRIX_ZY,
+    PROP_MATRIX_WY,
+
+    PROP_MATRIX_XZ,
+    PROP_MATRIX_YZ,
+    PROP_MATRIX_ZZ,
+    PROP_MATRIX_WZ,
+
+    PROP_MATRIX_XW,
+    PROP_MATRIX_YW,
+    PROP_MATRIX_ZW,
+    PROP_MATRIX_WW,
 
     PROP_TRANSLATE_X,
     PROP_TRANSLATE_Y,
@@ -99,6 +126,13 @@ static void graphics_layer_actor_class_init(GraphicsLayerActorClass* klass)
     actorClass->pick = graphicsLayerActorPick;
 
     g_type_class_add_private(klass, sizeof(GraphicsLayerActorPrivate));
+
+    pspec = g_param_spec_boolean("flattenMatrix",
+                                "FlattenMatrix",
+                                "Whether to flatten the matrix",
+                                FALSE,
+                                static_cast<GParamFlags>(G_PARAM_READWRITE));
+    g_object_class_install_property(objectClass, PROP_FLATTEN_MATRIX, pspec);
 
     pspec = g_param_spec_float("translate-x",
                                "Translate X",
@@ -140,6 +174,15 @@ static void graphics_layer_actor_init(GraphicsLayerActor* self)
     g_signal_connect(self, "actor-removed", G_CALLBACK(graphicsLayerActorRemoved), 0);
 }
 
+void graphicsLayerActorSetFlattenMatrix(GraphicsLayerActor* layer, gboolean value)
+{
+    LOG(AcceleratedCompositing, "%s(%d) %s", __func__, value, clutter_actor_get_name(CLUTTER_ACTOR(layer)));
+
+    GraphicsLayerActorPrivate* priv = layer->priv;
+    priv->flattenMatrix = value;
+}
+
+
 static void graphicsLayerActorSetProperty(GObject* object, guint propID, const GValue* value, GParamSpec* pspec)
 {
     GraphicsLayerActor* layer = GRAPHICS_LAYER_ACTOR(object);
@@ -151,14 +194,17 @@ static void graphicsLayerActorSetProperty(GObject* object, guint propID, const G
     case PROP_TRANSLATE_Y:
         graphicsLayerActorSetTranslateY(layer, g_value_get_float(value));
         break;
+    case PROP_FLATTEN_MATRIX:
+        graphicsLayerActorSetFlattenMatrix(layer, g_value_get_boolean(value));
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propID, pspec);
     }
 }
-
 static void graphicsLayerActorGetProperty(GObject* object, guint propID, GValue* value, GParamSpec* pspec)
 {
     GraphicsLayerActor* layer = GRAPHICS_LAYER_ACTOR(object);
+    GraphicsLayerActorPrivate* priv = layer->priv;
 
     switch (propID) {
     case PROP_TRANSLATE_X:
@@ -166,6 +212,9 @@ static void graphicsLayerActorGetProperty(GObject* object, guint propID, GValue*
         break;
     case PROP_TRANSLATE_Y:
         g_value_set_float(value, graphicsLayerActorGetTranslateY(layer));
+        break;
+    case PROP_FLATTEN_MATRIX:
+        g_value_set_boolean(value, priv->flattenMatrix);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propID, pspec);
@@ -248,6 +297,38 @@ static void graphicsLayerActorAllocate(ClutterActor* self, const ClutterActorBox
     }
 
     priv->allocating = FALSE;
+}
+
+void graphicsLayerActorSetChildrenTransform(GraphicsLayerActor* layer, const CoglMatrix* matrix)
+{
+    LOG(AcceleratedCompositing, "%s %s(%p)", __func__, clutter_actor_get_name(CLUTTER_ACTOR(layer)), layer);
+    //LOG(AcceleratedCompositing, "Matrix:\n%s", matrixToString(matrix));
+
+    GraphicsLayerActorPrivate* priv = layer->priv;
+
+    CoglMatrix identity;
+    cogl_matrix_init_identity(&identity);
+    if (cogl_matrix_equal((CoglMatrix*)&identity, (CoglMatrix*)matrix)) {
+        g_message("Ignore identity matrix");
+        return;
+    }
+
+    if (priv->childrenMatrix)
+        cogl_matrix_free(priv->childrenMatrix);
+
+    priv->childrenMatrix = cogl_matrix_copy(matrix);
+
+    // The children of this layer which has a perspective property are not flatten·
+    // to make the perspective work.
+    GList* list;
+    for (list = layer->children; list; list = list->next) {
+        GraphicsLayerActor* child = GRAPHICS_LAYER_ACTOR(list->data);
+        graphicsLayerActorSetFlattenMatrix(child, FALSE);
+    }
+
+    //createOffScreenFrameBuffer(layer, matrix);
+
+    clutter_actor_queue_redraw(CLUTTER_ACTOR(layer));
 }
 
 static void graphicsLayerActorApplyTransform(ClutterActor* actor, CoglMatrix* matrix)
@@ -421,7 +502,6 @@ static void graphicsLayerActorDrawLayerContents(ClutterActor* actor, GraphicsCon
     // Apply the painted content to the layer.
     priv->layerClient->platformClutterLayerPaintContents(context, clip);
 }
-
 
 GraphicsLayerActor* graphicsLayerActorNew(GraphicsLayerClutter::LayerType type)
 {
