@@ -61,6 +61,7 @@ namespace WebCore {
     extern WTFLogChannel LogArchives;
     extern WTFLogChannel LogProgress;
     extern WTFLogChannel LogFileAPI;
+    extern WTFLogChannel LogAcceleratedCompositing;
     extern WTFLogChannel LogWebAudio;
     extern WTFLogChannel LogCompositing;
     extern WTFLogChannel LogGamepad;
