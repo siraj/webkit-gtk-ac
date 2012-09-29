@@ -76,6 +76,7 @@ static gboolean idleDestroy(gpointer data)
 
 GraphicsLayerClutter::~GraphicsLayerClutter()
 {
+    GraphicsLayer::willBeDestroyed();
     // The root layer is removed in webkit_iweb_view_detach_root_graphics_layer.
     if (graphicsLayerActorGetLayerType(m_layer.get()) == GraphicsLayerClutter::LayerTypeRootLayer)
         return;
@@ -86,6 +87,8 @@ GraphicsLayerClutter::~GraphicsLayerClutter()
         graphicsLayerActorSetClient(m_layer.get(), 0);
         g_idle_add(idleDestroy, m_layer.leakRef());
     }
+
+    m_client = 0;
 }
 
 void GraphicsLayerClutter::setName(const String& name)
