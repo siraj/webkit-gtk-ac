@@ -387,12 +387,10 @@ static void graphicsLayerActorUpdateTexture(GraphicsLayerActor* layer)
     int width = ceilf(clutter_actor_get_width(actor));
     int height = ceilf(clutter_actor_get_height(actor));
 
-    priv->texture = CLUTTER_ACTOR(g_object_new(CLUTTER_TYPE_CAIRO_TEXTURE,
-                                               "auto-resize", TRUE,
-                                               "surface-height", width > 0 ? width : 1,
-                                               "surface-width", height > 0 ? height : 1,
-                                               0));
+    priv->texture = clutter_cairo_texture_new(width > 0 ? width : 1, height > 0 ? height : 1);
 
+    //TODO : set surface hight/width
+    clutter_cairo_texture_set_auto_resize(CLUTTER_CAIRO_TEXTURE(priv->texture), TRUE);
     clutter_actor_set_parent(priv->texture, actor);
 
     g_signal_connect(priv->texture, "draw", G_CALLBACK(graphicsLayerActorDraw), layer);
