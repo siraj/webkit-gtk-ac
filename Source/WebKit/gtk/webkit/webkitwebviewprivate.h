@@ -30,10 +30,8 @@
 #include "GtkDragAndDropHelper.h"
 #include "Page.h"
 #include "ResourceHandle.h"
-#include "UserMediaClient.h"
 #include "WebViewInputMethodFilter.h"
 #include "WidgetBackingStore.h"
-
 #include <webkit/webkitwebview.h>
 #include <wtf/gobject/GOwnPtr.h>
 

@@ -26,7 +26,6 @@
 
 #include "MediaStreamSource.h"
 #include "UserMediaClient.h"
-#include <wtf/HashSet.h>
 
 typedef struct _WebKitWebView WebKitWebView;
 

@@ -27,7 +27,6 @@
 
 #include "webkitwebusermedialistprivate.h"
 #include "webkitwebusermediarequestprivate.h"
-#include "webkitwebviewprivate.h"
 
 using namespace WebCore;
 
@@ -44,7 +43,6 @@ UserMediaClientGtk::~UserMediaClientGtk()
 
 void UserMediaClientGtk::pageDestroyed()
 {
-    // TODO: we should do some clean up here.
 }
 
 void UserMediaClientGtk::requestUserMedia(WTF::PassRefPtr<UserMediaRequest> prpRequest, const WebCore::MediaStreamSourceVector& audioSources, const WebCore::MediaStreamSourceVector& videoSources)
