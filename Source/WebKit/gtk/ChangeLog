@@ -1,4 +1,4 @@
-2012-09-28  Danilo Cesar Lemes de Paula  <danilo.cesar@collabora.co.uk>
+2012-10-02  Danilo Cesar Lemes de Paula  <danilo.cesar@collabora.co.uk>
 
         [gtk] adding methods and signals for usermedia communication between webkit and browser
         https://bugs.webkit.org/show_bug.cgi?id=94373

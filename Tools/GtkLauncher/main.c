@@ -213,137 +213,134 @@ static GtkWidget *inspectorInspectWebViewCb(WebKitWebInspector *inspector, WebKi
     return GTK_WIDGET(launcherInspectorWindowGetWebView(LAUNCHER_INSPECTOR_WINDOW(inspectorWindow)));
 }
 
-static void userMediaRequestCancelledCb(WebKitWebView *webView, WebKitWebUserMediaRequest* request, GtkWidget* dialog)
+static void userMediaRequestCancelledCb(WebKitWebView* webView, WebKitWebUserMediaRequest* request, GtkWidget* dialog)
 {
     g_signal_emit_by_name(dialog, "response", GTK_RESPONSE_CANCEL);
 }
 
-static void userMediaRequestedCb(WebKitWebView *webView,
-                                 WebKitWebUserMediaRequest* request,
-                                 WebKitWebUserMediaList* audioMediaList,
-                                 WebKitWebUserMediaList* videoMediaList)
+static void userMediaRequestedCb(WebKitWebView* webView, WebKitWebUserMediaRequest* request, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
 {
-     GtkWidget* dialog;
-     GtkWidget* contentArea;
-     GtkWidget* actionArea;
-     GtkWidget* frame;
-     GtkWidget* vbox;
-     GtkWidget** audioCheckButtons;
-     GtkWidget** videoCheckButtons;
-     GtkWidget* audioMessage;
-     GtkWidget* videoMessage = 0;
-     gboolean wantsAudio = webkit_web_user_media_request_wants_audio(request);
-     gboolean wantsVideo = webkit_web_user_media_request_wants_video(request);
-     gboolean hasAudio = false;
-     gboolean hasVideo = false;
-     gint audioListLength = webkit_web_user_media_list_get_length(audioMediaList);
-     gint videoListLength = webkit_web_user_media_list_get_length(videoMediaList);
-     gint i;
+    GtkWidget *dialog;
+    GtkWidget *contentArea;
+    GtkWidget *actionArea;
+    GtkWidget *frame;
+    GtkWidget *vbox;
+    GtkWidget **audioCheckButtons;
+    GtkWidget **videoCheckButtons;
+    GtkWidget *audioMessage;
+    GtkWidget *videoMessage = 0;
+    gboolean wantsAudio = webkit_web_user_media_request_wants_audio(request);
+    gboolean wantsVideo = webkit_web_user_media_request_wants_video(request);
+    gboolean hasAudio = false;
+    gboolean hasVideo = false;
+    gint audioListLength = webkit_web_user_media_list_get_length(audioMediaList);
+    gint videoListLength = webkit_web_user_media_list_get_length(videoMediaList);
+    gint i;
 
-     dialog = gtk_dialog_new_with_buttons("User Media Selector",
-                                          GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(webView))),
-                                          GTK_DIALOG_DESTROY_WITH_PARENT,
-                                          GTK_STOCK_CANCEL,
-                                          GTK_RESPONSE_CANCEL,
-                                          GTK_STOCK_OK,
-                                          GTK_RESPONSE_OK,
-                                          NULL);
+    dialog = gtk_dialog_new_with_buttons("User Media Selector",
+                                         GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(webView))),
+                                         GTK_DIALOG_DESTROY_WITH_PARENT,
+                                         GTK_STOCK_CANCEL,
+                                         GTK_RESPONSE_CANCEL,
+                                         GTK_STOCK_OK,
+                                         GTK_RESPONSE_OK,
+                                         NULL);
 
-     gtk_window_set_resizable(GTK_WINDOW(dialog), FALSE);
-     gtk_container_set_border_width(GTK_CONTAINER(dialog), 5);
+    gtk_window_set_resizable(GTK_WINDOW(dialog), FALSE);
+    gtk_container_set_border_width(GTK_CONTAINER(dialog), 5);
 
-     contentArea = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-     gtk_box_set_spacing(GTK_BOX(contentArea), 2);
+    contentArea = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    gtk_box_set_spacing(GTK_BOX(contentArea), 2);
 
-     actionArea = gtk_dialog_get_action_area(GTK_DIALOG(dialog));
-     gtk_container_set_border_width(GTK_CONTAINER(actionArea), 5);
-     gtk_box_set_spacing(GTK_BOX(actionArea), 6);
+    actionArea = gtk_dialog_get_action_area(GTK_DIALOG(dialog));
+    gtk_container_set_border_width(GTK_CONTAINER(actionArea), 5);
+    gtk_box_set_spacing(GTK_BOX(actionArea), 6);
 
-     hasAudio = (audioListLength > 0);
-     hasVideo = (videoListLength > 0);
+    hasAudio = (audioListLength > 0);
+    hasVideo = (videoListLength > 0);
 
-     i = 0;
+    i = 0;
 
-     if (!hasAudio && !hasVideo) {
-         audioMessage = gtk_label_new("No user media available");
-         gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
-         gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
-     } else if (wantsAudio) {
-         audioMessage = gtk_label_new(hasAudio ? "Select from available user audio" : "No user audio available");
-         gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
-         gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
-     }
+    if (!hasAudio && !hasVideo) {
+        audioMessage = gtk_label_new("No user media available");
+        gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
+        gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
+    } else if (wantsAudio) {
+        audioMessage = gtk_label_new(hasAudio ? "Select from available user audio" : "No user audio available");
+        gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
+        gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
+    }
 
-     audioCheckButtons = g_new(GtkWidget*, audioListLength);
-     videoCheckButtons = g_new(GtkWidget*, videoListLength);
+    audioCheckButtons = g_new(GtkWidget*, audioListLength);
+    videoCheckButtons = g_new(GtkWidget*, videoListLength);
 
-     if (hasAudio) {
-         frame = gtk_frame_new("Audio");
+    if (hasAudio) {
+        frame = gtk_frame_new("Audio");
 #if GTK_CHECK_VERSION(3, 2, 0)
-         vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #else
-         vbox = gtk_vbox_new(TRUE, 0);
+        vbox = gtk_vbox_new(TRUE, 0);
 #endif
-         gtk_container_set_border_width(GTK_CONTAINER(vbox), 3);
+        gtk_container_set_border_width(GTK_CONTAINER(vbox), 3);
 
-         for (i = 0; i < audioListLength; i++) {
-             audioCheckButtons[i] = gtk_check_button_new_with_label(webkit_web_user_media_list_get_item_name(audioMediaList, i));
-             gtk_container_add(GTK_CONTAINER(vbox), audioCheckButtons[i]);
-         }
+        for (i = 0; i < audioListLength; i++) {
+            audioCheckButtons[i] = gtk_check_button_new_with_label(webkit_web_user_media_list_get_item_name(audioMediaList, i));
+            gtk_container_add(GTK_CONTAINER(vbox), audioCheckButtons[i]);
+        }
 
-         gtk_container_add(GTK_CONTAINER(frame), vbox);
-         gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
-     }
+        gtk_container_add(GTK_CONTAINER(frame), vbox);
+        gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
+    }
 
-     if (wantsVideo) {
-         if (hasVideo) {
-             videoMessage = gtk_label_new("Select from available user video");
-         } else if (!wantsAudio || hasAudio)
-             videoMessage = gtk_label_new("No user video available");
-         if (videoMessage) {
-             gtk_misc_set_alignment(GTK_MISC(videoMessage), 0, 0);
-             gtk_box_pack_start(GTK_BOX(contentArea), videoMessage, FALSE, FALSE, 6);
-         }
-     }
+    if (wantsVideo) {
+        if (hasVideo) {
+            videoMessage = gtk_label_new("Select from available user video");
+        } else if (!wantsAudio || hasAudio)
+            videoMessage = gtk_label_new("No user video available");
+        if (videoMessage) {
+            gtk_misc_set_alignment(GTK_MISC(videoMessage), 0, 0);
+            gtk_box_pack_start(GTK_BOX(contentArea), videoMessage, FALSE, FALSE, 6);
+        }
+    }
 
-     if (hasVideo) {
-         frame = gtk_frame_new("Video");
+    if (hasVideo) {
+        frame = gtk_frame_new("Video");
 #if GTK_CHECK_VERSION(3, 2, 0)
-         vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #else
-         vbox = gtk_vbox_new(TRUE, 0);
+        vbox = gtk_vbox_new(TRUE, 0);
 #endif
-         gtk_container_set_border_width(GTK_CONTAINER(vbox), 3);
+        gtk_container_set_border_width(GTK_CONTAINER(vbox), 3);
 
-         for (i = 0; i < videoListLength; i++) {
-             videoCheckButtons[i] = gtk_check_button_new_with_label(webkit_web_user_media_list_get_item_name(videoMediaList, i));
-             gtk_container_add(GTK_CONTAINER(vbox), videoCheckButtons[i]);
-         }
+        for (i = 0; i < videoListLength; i++) {
+            videoCheckButtons[i] = gtk_check_button_new_with_label(webkit_web_user_media_list_get_item_name(videoMediaList, i));
+            gtk_container_add(GTK_CONTAINER(vbox), videoCheckButtons[i]);
+        }
 
-         gtk_container_add(GTK_CONTAINER(frame), vbox);
-         gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
-     }
+        gtk_container_add(GTK_CONTAINER(frame), vbox);
+        gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
+    }
 
-     g_signal_connect(webView, "user-media-request-cancelled", G_CALLBACK(userMediaRequestCancelledCb), dialog);
+    g_signal_connect(webView, "user-media-request-cancelled", G_CALLBACK(userMediaRequestCancelledCb), dialog);
 
-     gtk_widget_show_all(dialog);
+    gtk_widget_show_all(dialog);
 
-     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
-         for (i = 0; i < audioListLength; i++) {
-             if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(audioCheckButtons[i])))
-                 webkit_web_user_media_list_select_item(audioMediaList, i);
-         }
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
+        for (i = 0; i < audioListLength; i++) {
+            if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(audioCheckButtons[i])))
+                webkit_web_user_media_list_select_item(audioMediaList, i);
+        }
 
-         for (i = 0; i < videoListLength; i++) {
-             if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(videoCheckButtons[i])))
-                 webkit_web_user_media_list_select_item(videoMediaList, i);
-         }
-         webkit_web_view_accept_user_media_request(webView, request, audioMediaList, videoMediaList);
-     } else
-         webkit_web_view_reject_user_media_request(webView, request);
+        for (i = 0; i < videoListLength; i++) {
+            if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(videoCheckButtons[i])))
+                webkit_web_user_media_list_select_item(videoMediaList, i);
+        }
+        webkit_web_view_accept_user_media_request(webView, request, audioMediaList, videoMediaList);
+    } else
+        webkit_web_view_reject_user_media_request(webView, request);
 
-     g_signal_handlers_disconnect_by_func(webView, (gpointer) userMediaRequestCancelledCb, dialog);
-     gtk_widget_destroy(dialog);
+    g_signal_handlers_disconnect_by_func(webView, (gpointer) userMediaRequestCancelledCb, dialog);
+    gtk_widget_destroy(dialog);
 }
 
 static GtkWidget* createBrowser(GtkWidget* window, GtkWidget* uriEntry, GtkWidget* statusbar, WebKitWebView* webView, GtkWidget* vbox)
