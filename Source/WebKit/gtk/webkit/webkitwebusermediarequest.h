@@ -56,8 +56,16 @@ webkit_web_user_media_request_wants_audio              (WebKitWebUserMediaReques
 WEBKIT_API gboolean
 webkit_web_user_media_request_wants_video              (WebKitWebUserMediaRequest *request);
 
-WEBKIT_API WebKitSecurityOrigin*
+WEBKIT_API WebKitSecurityOrigin *
 webkit_web_user_media_request_get_origin               (WebKitWebUserMediaRequest *request);
+
+WEBKIT_API void
+webkit_web_user_media_request_fail                     (WebKitWebUserMediaRequest *request,
+
+WEBKIT_API void
+webkit_web_user_media_request_succeed                  (WebKitWebUserMediaRequest *request,
+                                                        WebKitWebUserMediaList* audioMediaList,
+                                                        WebKitWebUserMediaList* audioMediaList);
 
 G_END_DECLS
 

@@ -38,7 +38,7 @@ namespace WebKit {
 class UserMediaClientGtk : public WebCore::UserMediaClient {
 public:
     UserMediaClientGtk(WebKitWebView*);
-    ~UserMediaClientGtk();
+    virtual ~UserMediaClientGtk();
 
     virtual void pageDestroyed();
 
@@ -49,7 +49,7 @@ private:
     WebKitWebView* m_webView;
 };
 
-}
+} // namespace WebKit;
 
 #endif // ENABLE(MEDIA_STREAM)
 

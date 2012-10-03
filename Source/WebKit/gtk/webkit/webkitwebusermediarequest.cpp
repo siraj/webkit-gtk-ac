@@ -18,10 +18,9 @@
 
 
 #include "config.h"
+#include "webkitwebusermediarequest.h"
 
 #if ENABLE(MEDIA_STREAM)
-
-#include "webkitwebusermediarequest.h"
 
 #include "Frame.h"
 #include "SecurityOrigin.h"
@@ -39,7 +38,7 @@
  * This object contains the information of a media request.
  * It can be used to check if the request is asking for audio and/or video.
  *
- * Since: 1.10.0
+ * Since: 2.0.0
  */
 
 using namespace WebKit;
@@ -81,9 +80,9 @@ static void webkit_web_user_media_request_init(WebKitWebUserMediaRequest* reques
  *
  * Indicates the content of an UserMediaRequest.
  *
- * Return value: True if the request contains an audio request.
+ * Return value: %TRUE if the request contains an audio request or %FALSE if otherwise.
  *
- * Since: 1.10.0
+ * Since: 2.0.0
  */
 gboolean webkit_web_user_media_request_wants_audio(WebKitWebUserMediaRequest* request)
 {
@@ -98,9 +97,9 @@ gboolean webkit_web_user_media_request_wants_audio(WebKitWebUserMediaRequest* re
  *
  * Indicates the content of an UserMediaRequest.
  *
- * Return value: True if the request contains a video request.
+ * Return value: %TRUE if the request contains a video request or %FALSE if otherwise.
  *
- * Since: 1.10.0
+ * Since: 2.0.0
  */
 gboolean webkit_web_user_media_request_wants_video(WebKitWebUserMediaRequest* request)
 {
@@ -117,7 +116,7 @@ gboolean webkit_web_user_media_request_wants_video(WebKitWebUserMediaRequest* re
  *
  * Return value: (transfer none): the security origin of the media request.
  *
- * Since: 1.10.0
+ * Since: 2.0.0
  */
 WebKitSecurityOrigin* webkit_web_user_media_request_get_security_origin(WebKitWebUserMediaRequest* request)
 {
@@ -126,18 +125,69 @@ WebKitSecurityOrigin* webkit_web_user_media_request_get_security_origin(WebKitWe
     return kit(core(request)->scriptExecutionContext()->securityOrigin());
 }
 
+/**
+ * webkit_web_user_media_request_succeed:
+ * @webView: a #WebKitWebView
+ * @webRequest: a #WebKitWebUserMediaRequest
+ * @audioMediaList: a #WebKitWebUserMediaList containing audio devices
+ * @videoMediaList: a #WebKitWebUserMediaList containing video devices
+ *
+ * This method should be called by the application after the user selects
+ * a media device and accepts an media request
+ *
+ * Since: 2.0.0
+ **/
+void webkit_web_user_media_request_succeed(WebKitWebUserMediaRequest *webRequest,
+                                           WebKitWebUserMediaList* audioMediaList,
+                                           WebKitWebUserMediaList* audioMediaList)
+{
+    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
+    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(audioMediaList));
+    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(videoMediaList));
+
+    MediaStreamSourceVector& audioSources = core(audioMediaList);
+    MediaStreamSourceVector& videoSources = core(videoMediaList);
+
+    for (size_t i = audioSources.size() - 1; i != (size_t) -1; --i)
+        if (!webkit_web_user_media_list_is_item_selected(audioMediaList, i))
+            audioSources.remove(i);
+
+    for (size_t i = videoSources.size() - 1; i != (size_t) -1; --i)
+        if (!webkit_web_user_media_list_is_item_selected(videoMediaList, i))
+            videoSources.remove(i);
+
+    core(webRequest)->succeed(audioSources, videoSources);
+
+}
+
+/**
+ * webkit_web_view_reject_user_media_request:
+ * @webView: a #WebKitWebView
+ * @webRequest: a #WebKitWebUserMediaRequest
+ *
+ * This method should be called by the application when the user rejected a userMedia request.
+ *
+ * Since: 2.0.0
+ **/
+void webkit_web_user_media_request_fail(WebKitWebUserMediaRequest *webRequest)
+{
+    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
+    core(webRequest)->fail();
+}
+
+
 namespace WebKit {
 
 WebCore::UserMediaRequest* core(WebKitWebUserMediaRequest* request)
 {
-    g_return_val_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(request), 0);
+    ASSERT(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(request));
 
     return request->priv->userMediaRequest.get();
 }
 
 WebKitWebUserMediaRequest* kitNew(WebCore::UserMediaRequest* request)
 {
-    g_return_val_if_fail(request, 0);
+    ASSERT(request);
 
     WebKitWebUserMediaRequest* webRequest = WEBKIT_WEB_USER_MEDIA_REQUEST(g_object_new(WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST, NULL));
     webRequest->priv->userMediaRequest = request;

@@ -17,14 +17,12 @@
  */
 
 #include "config.h"
+#include "webkitwebusermedialist.h"
 
 #if ENABLE(MEDIA_STREAM)
 
-#include "webkitwebusermedialist.h"
-
 #include "webkitglobalsprivate.h"
 #include "webkitwebusermedialistprivate.h"
-
 #include <wtf/text/CString.h>
 
 
@@ -36,7 +34,7 @@
  * #WebKitWebUserMediaList contains a list of
  * audio or video sources from a WebUserMediaRequest
  *
- * Since: 1.10.0
+ * Since: 2.0.0
  */
 
 using namespace WebKit;
@@ -48,16 +46,6 @@ struct _WebKitWebUserMediaListPrivate {
 
 G_DEFINE_TYPE(WebKitWebUserMediaList, webkit_web_user_media_list, G_TYPE_OBJECT)
 
-static void webkitWebUserMediaListDispose(GObject* object)
-{
-    WebKitWebUserMediaList* userMediaList = WEBKIT_WEB_USER_MEDIA_LIST(object);
-    WebKitWebUserMediaListPrivate* priv = userMediaList->priv;
-
-    priv->sourceSelections.clear();
-
-    G_OBJECT_CLASS(webkit_web_user_media_list_parent_class)->dispose(object);
-}
-
 static void webkitWebUserMediaListFinalize(GObject* object)
 {
     WEBKIT_WEB_USER_MEDIA_LIST(object)->priv->~WebKitWebUserMediaListPrivate();
@@ -66,9 +54,8 @@ static void webkitWebUserMediaListFinalize(GObject* object)
 
 static void webkit_web_user_media_list_class_init(WebKitWebUserMediaListClass* listClass)
 {
-    GObjectClass* gobject_class = G_OBJECT_CLASS(listClass);
-    gobject_class->dispose = webkitWebUserMediaListDispose;
-    gobject_class->finalize = webkitWebUserMediaListFinalize;
+    GObjectClass* gobjectClass = G_OBJECT_CLASS(listClass);
+    gobjectClass->finalize = webkitWebUserMediaListFinalize;
 
     webkitInit();
 
@@ -92,7 +79,7 @@ static void webkit_web_user_media_list_init(WebKitWebUserMediaList* list)
  *
  * Return value: number of elements.
  *
- * Since: 1.10.0
+ * Since: 2.0.0
  */
 guint webkit_web_user_media_list_get_length(WebKitWebUserMediaList* list)
 {
@@ -111,7 +98,7 @@ guint webkit_web_user_media_list_get_length(WebKitWebUserMediaList* list)
  *
  * Return value: the device id of the @index given element.
  *
- * Since: 1.10.0
+ * Since: 2.0.0
  */
 const gchar* webkit_web_user_media_list_get_item_name(WebKitWebUserMediaList* list, guint index)
 {
@@ -132,12 +119,11 @@ const gchar* webkit_web_user_media_list_get_item_name(WebKitWebUserMediaList* li
  *
  * Return value: True if the device represented by @index is marked as selected.
  *
- * Since: 1.10.0
+ * Since: 2.0.0
  */
 gboolean webkit_web_user_media_list_is_item_selected(WebKitWebUserMediaList* list, guint index)
 {
     g_return_val_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(list), FALSE);
-
     g_return_val_if_fail(index < core(list).size(), FALSE);
 
     return list->priv->sourceSelections[index];
@@ -150,12 +136,11 @@ gboolean webkit_web_user_media_list_is_item_selected(WebKitWebUserMediaList* lis
  *
  * Mark a device as selecteed.
  *
- * Since: 1.10.0
+ * Since: 2.0.0
  */
 void webkit_web_user_media_list_select_item(WebKitWebUserMediaList* list, guint index)
 {
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(list));
-
     g_return_if_fail(index < core(list).size());
 
     list->priv->sourceSelections[index] = TRUE;

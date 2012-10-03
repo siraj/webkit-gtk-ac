@@ -335,9 +335,9 @@ static void userMediaRequestedCb(WebKitWebView* webView, WebKitWebUserMediaReque
             if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(videoCheckButtons[i])))
                 webkit_web_user_media_list_select_item(videoMediaList, i);
         }
-        webkit_web_view_accept_user_media_request(webView, request, audioMediaList, videoMediaList);
+        webkit_web_user_media_request_succeed(request, audioMediaList, videoMediaList);
     } else
-        webkit_web_view_reject_user_media_request(webView, request);
+        webkit_web_user_media_request_fail(request);
 
     g_signal_handlers_disconnect_by_func(webView, (gpointer) userMediaRequestCancelledCb, dialog);
     gtk_widget_destroy(dialog);

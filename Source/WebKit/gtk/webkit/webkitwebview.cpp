@@ -2742,21 +2742,22 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
      * When the application request userMedia, this signal will be emited with the request
      * information and the available options to be selected.
      *
-     * Then the user is expected to call either #webkit_web_view_accept_user_media_request() or
+     * Then the user is expected to call either webkit_web_user_media_request_succeed() or
      * webkit_web_view_reject_user_media_request() to accept or reject the request.
      *
-     * Since: 1.10.0
+     * Since: 2.0.0
      */
-    webkit_web_view_signals[USER_MEDIA_REQUESTED] = g_signal_new("user-media-requested",
-            G_TYPE_FROM_CLASS(webViewClass),
-            G_SIGNAL_RUN_LAST,
-            0,
-            0, 0,
-            webkit_marshal_VOID__OBJECT_OBJECT_OBJECT,
-            G_TYPE_NONE, 3,
-            WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST,
-            WEBKIT_TYPE_WEB_USER_MEDIA_LIST,
-            WEBKIT_TYPE_WEB_USER_MEDIA_LIST);
+    webkit_web_view_signals[USER_MEDIA_REQUESTED] =
+            g_signal_new("user-media-requested",
+                         G_TYPE_FROM_CLASS(webViewClass),
+                         G_SIGNAL_RUN_LAST,
+                         0,
+                         0, 0,
+                         webkit_marshal_VOID__OBJECT_OBJECT_OBJECT,
+                         G_TYPE_NONE, 3,
+                         WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST,
+                         WEBKIT_TYPE_WEB_USER_MEDIA_LIST,
+                         WEBKIT_TYPE_WEB_USER_MEDIA_LIST);
 
 
     /**
@@ -2766,16 +2767,17 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
      *
      * This signal will be emited when the user canceled its userMedia request.
      *
-     * Since: 1.10.0
+     * Since: 2.0.0
      */
-    webkit_web_view_signals[USER_MEDIA_REQUEST_CANCELLED] = g_signal_new("user-media-request-cancelled",
-            G_TYPE_FROM_CLASS(webViewClass),
-            G_SIGNAL_RUN_LAST,
-            0,
-            0, 0,
-            webkit_marshal_VOID__OBJECT,
-            G_TYPE_NONE, 1,
-            WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST);
+    webkit_web_view_signals[USER_MEDIA_REQUEST_CANCELLED] =
+            g_signal_new("user-media-request-cancelled",
+                         G_TYPE_FROM_CLASS(webViewClass),
+                         G_SIGNAL_RUN_LAST,
+                         0,
+                         0, 0,
+                         webkit_marshal_VOID__OBJECT,
+                         G_TYPE_NONE, 1,
+                         WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST);
 
 
     /**
@@ -5378,56 +5380,6 @@ void webViewExitFullscreen(WebKitWebView* webView)
     if (priv->fullscreenVideoController)
         priv->fullscreenVideoController->exitFullscreen();
 #endif
-}
-
-/**
- * webkit_web_view_accept_user_media_request:
- * @webView: a #WebKitWebView
- * @webRequest: a #WebKitWebUserMediaRequest
- * @audioMediaList: a #WebKitWebUserMediaList containing audio devices
- * @videoMediaList: a #WebKitWebUserMediaList containing video devices
- *
- * This method should be called by the application after the user selects
- * a media device and accepts an media request
- *
- * Since: 1.10.0
- **/
-void webkit_web_view_accept_user_media_request(WebKitWebView* webView, WebKitWebUserMediaRequest* webRequest, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
-{
-    g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
-    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
-    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(audioMediaList));
-    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(videoMediaList));
-
-    MediaStreamSourceVector& audioSources = core(audioMediaList);
-    MediaStreamSourceVector& videoSources = core(videoMediaList);
-
-    for (size_t i = audioSources.size() - 1; i != (size_t) -1; --i)
-        if (!webkit_web_user_media_list_is_item_selected(audioMediaList, i))
-            audioSources.remove(i);
-
-    for (size_t i = videoSources.size() - 1; i != (size_t) -1; --i)
-        if (!webkit_web_user_media_list_is_item_selected(videoMediaList, i))
-            videoSources.remove(i);
-
-    core(webRequest)->succeed(audioSources, videoSources);
-}
-
-/**
- * webkit_web_view_reject_user_media_request:
- * @webView: a #WebKitWebView
- * @webRequest: a #WebKitWebUserMediaRequest
- *
- * This method should be called by the application when the user rejected a userMedia request.
- *
- * Since: 1.10.0
- **/
-void webkit_web_view_reject_user_media_request(WebKitWebView *webView, WebKitWebUserMediaRequest *webRequest)
-{
-    g_return_if_fail(WEBKIT_IS_WEB_VIEW(webView));
-    g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
-
-    core(webRequest)->fail();
 }
 
 #if ENABLE(ICONDATABASE)

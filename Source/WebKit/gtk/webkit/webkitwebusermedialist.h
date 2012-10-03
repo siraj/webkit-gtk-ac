@@ -57,7 +57,7 @@ WEBKIT_API const gchar *
 webkit_web_user_media_list_get_item_name     (WebKitWebUserMediaList *list,
                                               guint index);
 WEBKIT_API gboolean
-webkit_web_user_media_list_is_item_selected (WebKitWebUserMediaList *list,
+webkit_web_user_media_list_is_item_selected  (WebKitWebUserMediaList *list,
                                               guint index);
 WEBKIT_API void
 webkit_web_user_media_list_select_item       (WebKitWebUserMediaList *list,
