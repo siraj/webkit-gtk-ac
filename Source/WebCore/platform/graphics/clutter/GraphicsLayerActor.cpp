@@ -48,6 +48,7 @@ struct _GraphicsLayerActorPrivate {
     PlatformClutterLayerClient* layerClient;
 
     gboolean drawsContent;
+    gboolean masksToBounds;
 
     gfloat anchorX;
     gfloat anchorY;
@@ -58,11 +59,49 @@ struct _GraphicsLayerActorPrivate {
 
     float translateX;
     float translateY;
+
+// copied from from clutter-webkit as it is
+    gboolean backfaceCulling;
+    gboolean preserves3D;
+    gboolean animated;
+
+    gfloat matrixArray[16];
+
+    gboolean offscreen;
+    CoglHandle textureID;
+    CoglHandle offscreenID;
+    gfloat expandX;
+    gfloat expandY;
+    gfloat fboWidth;
+    gfloat fboHeight;
 };
 
 enum {
     PROP_0,
 
+    PROP_DOUBLE_SIDED,
+    PROP_FLATTEN_MATRIX,
+    PROP_ANIMATED,
+
+    PROP_MATRIX_XX,
+    PROP_MATRIX_YX,
+    PROP_MATRIX_ZX,
+    PROP_MATRIX_WX,
+
+    PROP_MATRIX_XY,
+    PROP_MATRIX_YY,
+    PROP_MATRIX_ZY,
+    PROP_MATRIX_WY,
+
+    PROP_MATRIX_XZ,
+    PROP_MATRIX_YZ,
+    PROP_MATRIX_ZZ,
+    PROP_MATRIX_WZ,
+
+    PROP_MATRIX_XW,
+    PROP_MATRIX_YW,
+    PROP_MATRIX_ZW,
+    PROP_MATRIX_WW,
     PROP_TRANSLATE_X,
     PROP_TRANSLATE_Y,
 
@@ -82,6 +121,7 @@ static void graphicsLayerActorRemoved(ClutterContainer*, ClutterActor*, gpointer
 static gboolean graphicsLayerActorDraw(ClutterCairoTexture*, cairo_t*, GraphicsLayerActor*);
 static void graphicsLayerActorUpdateTexture(GraphicsLayerActor*);
 static void graphicsLayerActorDrawLayerContents(ClutterActor*, GraphicsContext&);
+static void graphicsLayerActorSetMatrixArray(GraphicsLayerActor*, gint index, gfloat);
 
 static void graphics_layer_actor_class_init(GraphicsLayerActorClass* klass)
 {
@@ -139,9 +179,58 @@ static void graphics_layer_actor_init(GraphicsLayerActor* self)
     g_signal_connect(self, "actor-removed", G_CALLBACK(graphicsLayerActorRemoved), 0);
 }
 
+void graphicsLayerActorSetPreserves3D(GraphicsLayerActor* layer, gboolean value)
+{
+    GraphicsLayerActorPrivate* priv = layer->priv;
+    priv->preserves3D = value;
+}
+
+void graphicsLayerActorSetDoubleSided(GraphicsLayerActor* layer, gboolean value)
+{
+    GraphicsLayerActorPrivate* priv = layer->priv;
+    priv->backfaceCulling = !value;
+}
+
+gboolean graphicsLayerActorGetDoubleSided(GraphicsLayerActor* layer)
+{
+    GraphicsLayerActorPrivate* priv = layer->priv;
+    return !priv->backfaceCulling;
+}
+
+static void graphicsLayerActorSetMatrixArray(GraphicsLayerActor* layer, gint index, gfloat value)
+{
+    GraphicsLayerActorPrivate* priv = layer->priv;
+    priv->matrixArray[index] = value;
+
+    if (index == 15) {
+        CoglMatrix matrix;
+        cogl_matrix_init_identity(&matrix);
+        matrix.xx = priv->matrixArray[0];
+        matrix.yx = priv->matrixArray[1];
+        matrix.zx = priv->matrixArray[2];
+        matrix.wx = priv->matrixArray[3];
+        matrix.xy = priv->matrixArray[4];
+        matrix.yy = priv->matrixArray[5];
+        matrix.zy = priv->matrixArray[6];
+        matrix.wy = priv->matrixArray[7];
+        matrix.xz = priv->matrixArray[8];
+        matrix.yz = priv->matrixArray[9];
+        matrix.zz = priv->matrixArray[10];
+        matrix.wz = priv->matrixArray[11];
+        matrix.xw = priv->matrixArray[12];
+        matrix.yw = priv->matrixArray[13];
+        matrix.zw = priv->matrixArray[14];
+        matrix.ww = priv->matrixArray[15];
+        priv->matrix = cogl_matrix_copy(&matrix);
+
+        clutter_actor_queue_redraw(CLUTTER_ACTOR(layer));
+    }
+}
+
 static void graphicsLayerActorSetProperty(GObject* object, guint propID, const GValue* value, GParamSpec* pspec)
 {
     GraphicsLayerActor* layer = GRAPHICS_LAYER_ACTOR(object);
+    GraphicsLayerActorPrivate* priv = layer->priv;
 
     switch (propID) {
     case PROP_TRANSLATE_X:
@@ -149,6 +238,65 @@ static void graphicsLayerActorSetProperty(GObject* object, guint propID, const G
         break;
     case PROP_TRANSLATE_Y:
         graphicsLayerActorSetTranslateY(layer, g_value_get_float(value));
+        break;
+    case PROP_DOUBLE_SIDED:
+        graphicsLayerActorSetDoubleSided(layer, g_value_get_boolean(value));
+        break;
+    case PROP_ANIMATED:
+        priv->animated =  g_value_get_boolean(value);
+        // Clear the final matrix value to start the animation form the first state.
+        if (priv->animated == TRUE && priv->matrix) {
+            cogl_matrix_free(priv->matrix);
+            priv->matrix = 0;
+        }
+        break;
+    case PROP_MATRIX_XX:
+        graphicsLayerActorSetMatrixArray(layer, 0, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_YX:
+        graphicsLayerActorSetMatrixArray(layer, 1, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_ZX:
+        graphicsLayerActorSetMatrixArray(layer, 2, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_WX:
+        graphicsLayerActorSetMatrixArray(layer, 3, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_XY:
+        graphicsLayerActorSetMatrixArray(layer, 4, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_YY:
+        graphicsLayerActorSetMatrixArray(layer, 5, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_ZY:
+        graphicsLayerActorSetMatrixArray(layer, 6, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_WY:
+        graphicsLayerActorSetMatrixArray(layer, 7, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_XZ:
+        graphicsLayerActorSetMatrixArray(layer, 8, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_YZ:
+        graphicsLayerActorSetMatrixArray(layer, 9, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_ZZ:
+        graphicsLayerActorSetMatrixArray(layer, 10, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_WZ:
+        graphicsLayerActorSetMatrixArray(layer, 11, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_XW:
+        graphicsLayerActorSetMatrixArray(layer, 12, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_YW:
+        graphicsLayerActorSetMatrixArray(layer, 13, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_ZW:
+        graphicsLayerActorSetMatrixArray(layer, 14, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_WW:
+        graphicsLayerActorSetMatrixArray(layer, 15, g_value_get_float(value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propID, pspec);
@@ -158,6 +306,7 @@ static void graphicsLayerActorSetProperty(GObject* object, guint propID, const G
 static void graphicsLayerActorGetProperty(GObject* object, guint propID, GValue* value, GParamSpec* pspec)
 {
     GraphicsLayerActor* layer = GRAPHICS_LAYER_ACTOR(object);
+    GraphicsLayerActorPrivate* priv = layer->priv;
 
     switch (propID) {
     case PROP_TRANSLATE_X:
@@ -165,6 +314,62 @@ static void graphicsLayerActorGetProperty(GObject* object, guint propID, GValue*
         break;
     case PROP_TRANSLATE_Y:
         g_value_set_float(value, graphicsLayerActorGetTranslateY(layer));
+        break;
+    case PROP_ANIMATED:
+        priv->animated =  g_value_get_boolean(value);
+        // Clear the final matrix value to start the animation form the first state.
+        if (priv->animated == TRUE && priv->matrix) {
+            cogl_matrix_free(priv->matrix);
+            priv->matrix = 0;
+        }
+        break;
+    case PROP_MATRIX_XX:
+        graphicsLayerActorSetMatrixArray(layer, 0, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_YX:
+        graphicsLayerActorSetMatrixArray(layer, 1, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_ZX:
+        graphicsLayerActorSetMatrixArray(layer, 2, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_WX:
+        graphicsLayerActorSetMatrixArray(layer, 3, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_XY:
+        graphicsLayerActorSetMatrixArray(layer, 4, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_YY:
+        graphicsLayerActorSetMatrixArray(layer, 5, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_ZY:
+        graphicsLayerActorSetMatrixArray(layer, 6, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_WY:
+        graphicsLayerActorSetMatrixArray(layer, 7, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_XZ:
+        graphicsLayerActorSetMatrixArray(layer, 8, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_YZ:
+        graphicsLayerActorSetMatrixArray(layer, 9, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_ZZ:
+        graphicsLayerActorSetMatrixArray(layer, 10, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_WZ:
+        graphicsLayerActorSetMatrixArray(layer, 11, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_XW:
+        graphicsLayerActorSetMatrixArray(layer, 12, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_YW:
+        graphicsLayerActorSetMatrixArray(layer, 13, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_ZW:
+        graphicsLayerActorSetMatrixArray(layer, 14, g_value_get_float(value));
+        break;
+    case PROP_MATRIX_WW:
+        graphicsLayerActorSetMatrixArray(layer, 15, g_value_get_float(value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, propID, pspec);
