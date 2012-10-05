@@ -175,6 +175,8 @@ static void graphics_layer_actor_init(GraphicsLayerActor* self)
 
     priv->matrix = 0;
 
+    priv->offscreen = FALSE;
+
     g_signal_connect(self, "actor-added", G_CALLBACK(graphicsLayerActorAdded), 0);
     g_signal_connect(self, "actor-removed", G_CALLBACK(graphicsLayerActorRemoved), 0);
 }
@@ -392,6 +394,14 @@ static void graphicsLayerActorDispose(GObject* object)
     if (priv->matrix)
        cogl_matrix_free(priv->matrix);
 
+    if (priv->textureID) {
+        cogl_handle_unref(priv->textureID);
+    }
+
+    if (priv->offscreenID) {
+        cogl_handle_unref(priv->offscreenID);
+    }
+
     G_OBJECT_CLASS(graphics_layer_actor_parent_class)->dispose(object);
 }
 
@@ -452,6 +462,101 @@ static void graphicsLayerActorAllocate(ClutterActor* self, const ClutterActorBox
     }
 
     priv->allocating = FALSE;
+}
+
+static void createOffScreenFrameBuffer(GraphicsLayerActor* layer, const CoglMatrix* matrix)
+{
+    GraphicsLayerActorPrivate* priv = layer->priv;
+
+    gfloat width = clutter_actor_get_width(CLUTTER_ACTOR(layer));
+    gfloat height = clutter_actor_get_height(CLUTTER_ACTOR(layer));
+
+    ClutterActorBox box;
+
+    // How to get the the paint box of children?
+    if (clutter_actor_get_paint_box(CLUTTER_ACTOR(layer), &box)) {
+        clutter_actor_box_get_size(&box, &priv->fboWidth, &priv->fboHeight);
+        clutter_actor_box_get_origin(&box, &priv->fboWidth, &priv->fboHeight);
+        priv->expandX = (priv->fboWidth -  width) / 2.0f;
+        priv->expandY = (priv->fboHeight -  height) / 2.0f;
+    } else {
+        g_warning("Failed to get a paint box");
+        float factor = 3.0f;
+        priv->fboWidth =  width * factor;
+        priv->fboHeight=  height * factor;
+        priv->expandX =  (width * factor - width) / 2.0f;
+        priv->expandY =  (height * factor - height) / 2.0f;
+    }
+
+    /*
+     * Create an offscreen buffer with texture.
+     */
+    if (priv->textureID)
+        cogl_handle_unref(priv->textureID);
+
+    if (priv->offscreenID)
+        cogl_handle_unref(priv->offscreenID);
+
+    priv->textureID = cogl_texture_new_with_size(priv->fboWidth, priv->fboHeight,
+                                                 COGL_TEXTURE_NO_SLICING,
+                                                 COGL_PIXEL_FORMAT_ARGB_8888);
+
+    if (priv->textureID == COGL_INVALID_HANDLE) {
+        g_warning("Failed creating texture with size!\n");
+        return;
+    }
+
+#if CLUTTER_CHECK_VERSION(1, 10, 0)
+    priv->offscreenID = cogl_offscreen_new_to_texture(static_cast<CoglTexture*>(priv->textureID));
+#else
+    priv->offscreenID = cogl_offscreen_new_to_texture(priv->textureID);
+#endif
+
+    if (priv->offscreenID == COGL_INVALID_HANDLE) {
+        g_warning("Failed creating offscreen to texture!\n");
+        return;
+    }
+
+    gfloat zCamera;
+    CoglMatrix mvMatrix;
+    CoglMatrix projectionMatrix;
+
+    cogl_push_framebuffer((CoglFramebuffer*)priv->offscreenID);
+
+    // The constant value needs to be multiplied in order to render like other WebKit browsers.
+    gfloat perspectiveOriginX = -matrix->xz / matrix->wz;
+    gfloat perspectiveOriginY = -matrix->yz / matrix->wz;
+
+    /* Expand the viewport if the actor is partially off-stage,
+     * otherwise the actor will end up clipped to the stage viewport
+     */
+    cogl_set_viewport(-perspectiveOriginX, -perspectiveOriginY, priv->fboWidth, priv->fboHeight);
+
+    cogl_matrix_init_identity(&projectionMatrix);
+    // Create a perspective projection matrix using the CSS3 perspective property value.
+
+    gfloat css3Perspective = -1.0f / matrix->wz;
+
+    cogl_matrix_perspective(&projectionMatrix, 30, 1.0, 0.1, css3Perspective);
+    cogl_set_projection_matrix(&projectionMatrix);
+
+    zCamera = 0.5 * projectionMatrix.xx;
+    cogl_matrix_init_identity(&mvMatrix);
+    cogl_matrix_translate(&mvMatrix, -0.5f, -0.5f, -zCamera);
+    // The last parameter has an effect on the depth.
+    cogl_matrix_scale(&mvMatrix, 1.0f / width, -1.0f / height, 1.0f / css3Perspective / 0.55f);
+    cogl_matrix_translate(&mvMatrix, 0.0f, -1.0f * height, 0.0f);
+
+    cogl_matrix_translate(&mvMatrix, width / 2.0f, height / 2.0f, 0.0f);
+    cogl_matrix_scale(&mvMatrix, width / priv->fboWidth, height / priv->fboHeight, 1.0f);
+    cogl_matrix_translate(&mvMatrix, -width / 2.0f, -height / 2.0f, 0.0f);
+
+    cogl_matrix_translate(&mvMatrix, perspectiveOriginX, perspectiveOriginY, 0.0f);
+    cogl_set_modelview_matrix(&mvMatrix);
+
+    cogl_pop_framebuffer();
+
+    priv->offscreen = TRUE;
 }
 
 static void graphicsLayerActorApplyTransform(ClutterActor* actor, CoglMatrix* matrix)
@@ -620,7 +725,8 @@ static void graphicsLayerActorDrawLayerContents(ClutterActor* actor, GraphicsCon
 
 GraphicsLayerActor* graphicsLayerActorNew(GraphicsLayerClutter::LayerType type)
 {
-    GraphicsLayerActor* layer = GRAPHICS_LAYER_ACTOR(g_object_new(GRAPHICS_LAYER_TYPE_ACTOR, 0));
+    //GraphicsLayerActor* layer = GRAPHICS_LAYER_ACTOR(g_object_new(GRAPHICS_LAYER_TYPE_ACTOR, 0));
+    GraphicsLayerActor* layer = GRAPHICS_LAYER_ACTOR(g_object_ref_sink(g_object_new(GRAPHICS_LAYER_TYPE_ACTOR, 0)));
     GraphicsLayerActorPrivate* priv = layer->priv;
 
     priv->layerType = type;
