@@ -46,6 +46,9 @@ G_BEGIN_DECLS
 #define WEBKIT_WEB_VIEW_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj),  WEBKIT_TYPE_WEB_VIEW, WebKitWebViewClass))
 
 typedef struct _WebKitWebViewPrivate WebKitWebViewPrivate;
+typedef struct _WebKitWebUserMediaRequest WebKitWebUserMediaRequest;
+typedef struct _WebKitWebUserMediaList WebKitWebUserMediaList;
+
 
 /**
  * WebKitNavigationResponse:
@@ -157,6 +160,10 @@ struct _WebKitWebViewClass {
                                                            const gchar          *message,
                                                            const gchar          *default_value,
                                                            gchar*               *value);
+    gboolean                   (* user_media_requested)   (WebKitWebView        *web_view,
+                                                           WebKitWebUserMediaRequest *request,
+                                                           WebKitWebUserMediaList    *audio,
+                                                           WebKitWebUserMediaList    *video);
     gboolean                   (* console_message)        (WebKitWebView        *web_view,
                                                            const gchar          *message,
                                                            guint                 line_number,
