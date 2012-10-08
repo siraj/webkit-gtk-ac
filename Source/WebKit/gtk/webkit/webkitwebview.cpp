@@ -1189,17 +1189,17 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
     GtkWidget *actionArea;
     GtkWidget *frame;
     GtkWidget *vbox;
-    GtkWidget **audioCheckButtons;
-    GtkWidget **videoCheckButtons;
-    GtkWidget *audioMessage;
+    GtkWidget *audioCombo = 0;
+    GtkWidget *videoCombo = 0;
+    GtkWidget *audioMessage = 0;
     GtkWidget *videoMessage = 0;
     gboolean wantsAudio = webkit_web_user_media_request_wants_audio(request);
     gboolean wantsVideo = webkit_web_user_media_request_wants_video(request);
-    gboolean hasAudio = false;
-    gboolean hasVideo = false;
     gint audioListLength = webkit_web_user_media_list_get_length(audioMediaList);
     gint videoListLength = webkit_web_user_media_list_get_length(videoMediaList);
-    gint i;
+    gboolean hasAudio = (audioListLength > 0);
+    gboolean hasVideo = (videoListLength > 0);
+    gint i = 0;
 
     dialog = gtk_dialog_new_with_buttons("User Media Selector",
                                          GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(webView))),
@@ -1220,11 +1220,6 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
     gtk_container_set_border_width(GTK_CONTAINER(actionArea), 5);
     gtk_box_set_spacing(GTK_BOX(actionArea), 6);
 
-    hasAudio = (audioListLength > 0);
-    hasVideo = (videoListLength > 0);
-
-    i = 0;
-
     if (!hasAudio && !hasVideo) {
         audioMessage = gtk_label_new("No user media available");
         gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
@@ -1235,9 +1230,6 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
         gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
     }
 
-    audioCheckButtons = g_new(GtkWidget*, audioListLength);
-    videoCheckButtons = g_new(GtkWidget*, videoListLength);
-
     if (hasAudio) {
         frame = gtk_frame_new("Audio");
 #if GTK_CHECK_VERSION(3, 2, 0)
@@ -1247,10 +1239,11 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
 #endif
         gtk_container_set_border_width(GTK_CONTAINER(vbox), 3);
 
-        for (i = 0; i < audioListLength; i++) {
-            audioCheckButtons[i] = gtk_check_button_new_with_label(webkit_web_user_media_list_get_item_name(audioMediaList, i));
-            gtk_container_add(GTK_CONTAINER(vbox), audioCheckButtons[i]);
-        }
+        audioCombo = gtk_combo_box_text_new();
+        for (i = 0; i < audioListLength; i++)
+            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(audioCombo), webkit_web_user_media_list_get_item_name(audioMediaList, i));
+        gtk_combo_box_set_active(GTK_COMBO_BOX(audioCombo), 0);
+        gtk_container_add(GTK_CONTAINER(vbox), audioCombo);
 
         gtk_container_add(GTK_CONTAINER(frame), vbox);
         gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
@@ -1276,10 +1269,11 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
 #endif
         gtk_container_set_border_width(GTK_CONTAINER(vbox), 3);
 
-        for (i = 0; i < videoListLength; i++) {
-            videoCheckButtons[i] = gtk_check_button_new_with_label(webkit_web_user_media_list_get_item_name(videoMediaList, i));
-            gtk_container_add(GTK_CONTAINER(vbox), videoCheckButtons[i]);
-        }
+        videoCombo = gtk_combo_box_text_new();
+        for (i = 0; i < videoListLength; i++)
+            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(videoCombo), webkit_web_user_media_list_get_item_name(videoMediaList, i));
+        gtk_combo_box_set_active(GTK_COMBO_BOX(videoCombo), 0);
+        gtk_container_add(GTK_CONTAINER(vbox), videoCombo);
 
         gtk_container_add(GTK_CONTAINER(frame), vbox);
         gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
@@ -1291,15 +1285,11 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
     gtk_widget_show_all(dialog);
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
-        for (i = 0; i < audioListLength; i++) {
-            if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(audioCheckButtons[i])))
-                webkit_web_user_media_list_select_item(audioMediaList, i);
-        }
+        if (audioCombo)
+            webkit_web_user_media_list_select_item(audioMediaList, gtk_combo_box_get_active(GTK_COMBO_BOX(audioCombo)));
+        if (videoCombo)
+            webkit_web_user_media_list_select_item(videoMediaList, gtk_combo_box_get_active(GTK_COMBO_BOX(videoCombo)));
 
-        for (i = 0; i < videoListLength; i++) {
-            if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(videoCheckButtons[i])))
-                webkit_web_user_media_list_select_item(videoMediaList, i);
-        }
         webkit_web_user_media_request_succeed(request, audioMediaList, videoMediaList);
     } else
         webkit_web_user_media_request_fail(request);
