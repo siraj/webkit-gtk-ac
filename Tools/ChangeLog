@@ -1,4 +1,4 @@
-2012-10-02  Danilo Cesar Lemes de Paula  <danilo.cesar@collabora.co.uk>
+2012-10-03  Danilo Cesar Lemes de Paula  <danilo.cesar@collabora.co.uk>
 
         [gtk] adding methods and signals for usermedia communication between webkit and browser
         https://bugs.webkit.org/show_bug.cgi?id=94373
@@ -12,9 +12,10 @@
 
         In case the user accepts the request, the application must mark the device as
         selected (using webkit_web_user_media_list_select_item) and then call
-        webkit_web_view_accept_user_media_request which will handle the request properly.
+        webkit_web_user_media_request_succeed which will handle the request properly.
 
-        An example of this API change is shown on GtkLauncher/main.c.
+        On the case the user reject the request, webkit_web_user_media_request_fail must
+        be called.
 
         Reviewed by NOBODY (OOPS!).
 

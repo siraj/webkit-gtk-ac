@@ -1,4 +1,4 @@
-2012-10-02  Danilo Cesar Lemes de Paula  <danilo.cesar@collabora.co.uk>
+2012-10-03  Danilo Cesar Lemes de Paula  <danilo.cesar@collabora.co.uk>
 
         [gtk] adding methods and signals for usermedia communication between webkit and browser
         https://bugs.webkit.org/show_bug.cgi?id=94373
@@ -12,7 +12,10 @@
 
         In case the user accepts the request, the application must mark the device as
         selected (using webkit_web_user_media_list_select_item) and then call
-        webkit_web_view_accept_user_media_request which will handle the request properly
+        webkit_web_user_media_request_succeed which will handle the request properly.
+
+        On the case the user reject the request, webkit_web_user_media_request_fail must
+        be called.
 
         Reviewed by NOBODY (OOPS!).
 
@@ -30,7 +33,6 @@
         * webkit/webkit.h:
         * webkit/webkitwebusermedialist.cpp: Added.
         (_WebKitWebUserMediaListPrivate):
-        (webkitWebUserMediaListDispose):
         (webkitWebUserMediaListFinalize):
         (webkit_web_user_media_list_class_init):
         (webkit_web_user_media_list_init):
@@ -54,6 +56,8 @@
         (webkit_web_user_media_request_wants_audio):
         (webkit_web_user_media_request_wants_video):
         (webkit_web_user_media_request_get_security_origin):
+        (webkit_web_user_media_request_succeed):
+        (webkit_web_user_media_request_fail):
         (WebKit):
         (WebKit::core):
         (WebKit::kitNew):
@@ -66,9 +70,6 @@
         * webkit/webkitwebview.cpp:
         (webkit_web_view_class_init):
         (webkit_web_view_init):
-        (webkit_web_view_accept_user_media_request):
-        (webkit_web_view_reject_user_media_request):
-        * webkit/webkitwebview.h:
         * webkitmarshal.list:
 
 2012-10-10  Brady Eidson  <beidson@apple.com>

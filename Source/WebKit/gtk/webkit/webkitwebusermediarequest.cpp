@@ -23,10 +23,12 @@
 #if ENABLE(MEDIA_STREAM)
 
 #include "Frame.h"
+#include "MediaStreamSource.h"
 #include "SecurityOrigin.h"
 #include "UserMediaRequest.h"
 #include "webkitglobalsprivate.h"
 #include "webkitsecurityoriginprivate.h"
+#include "webkitwebusermedialistprivate.h"
 #include "webkitwebusermediarequestprivate.h"
 #include <wtf/text/CString.h>
 
@@ -38,7 +40,7 @@
  * This object contains the information of a media request.
  * It can be used to check if the request is asking for audio and/or video.
  *
- * Since: 2.0.0
+ * Since: 2.0
  */
 
 using namespace WebKit;
@@ -82,7 +84,7 @@ static void webkit_web_user_media_request_init(WebKitWebUserMediaRequest* reques
  *
  * Return value: %TRUE if the request contains an audio request or %FALSE if otherwise.
  *
- * Since: 2.0.0
+ * Since: 2.0
  */
 gboolean webkit_web_user_media_request_wants_audio(WebKitWebUserMediaRequest* request)
 {
@@ -99,7 +101,7 @@ gboolean webkit_web_user_media_request_wants_audio(WebKitWebUserMediaRequest* re
  *
  * Return value: %TRUE if the request contains a video request or %FALSE if otherwise.
  *
- * Since: 2.0.0
+ * Since: 2.0
  */
 gboolean webkit_web_user_media_request_wants_video(WebKitWebUserMediaRequest* request)
 {
@@ -109,14 +111,14 @@ gboolean webkit_web_user_media_request_wants_video(WebKitWebUserMediaRequest* re
 }
 
 /**
- * webkit_web_user_media_request_get_origin:
+ * webkit_web_user_media_request_get_security_origin:
  * @request: the #WebKitUserMediaRequest itself.
  *
  * Returns the security origin of the Media Request.
  *
  * Return value: (transfer none): the security origin of the media request.
  *
- * Since: 2.0.0
+ * Since: 2.0
  */
 WebKitSecurityOrigin* webkit_web_user_media_request_get_security_origin(WebKitWebUserMediaRequest* request)
 {
@@ -127,7 +129,6 @@ WebKitSecurityOrigin* webkit_web_user_media_request_get_security_origin(WebKitWe
 
 /**
  * webkit_web_user_media_request_succeed:
- * @webView: a #WebKitWebView
  * @webRequest: a #WebKitWebUserMediaRequest
  * @audioMediaList: a #WebKitWebUserMediaList containing audio devices
  * @videoMediaList: a #WebKitWebUserMediaList containing video devices
@@ -135,18 +136,16 @@ WebKitSecurityOrigin* webkit_web_user_media_request_get_security_origin(WebKitWe
  * This method should be called by the application after the user selects
  * a media device and accepts an media request
  *
- * Since: 2.0.0
+ * Since: 2.0
  **/
-void webkit_web_user_media_request_succeed(WebKitWebUserMediaRequest *webRequest,
-                                           WebKitWebUserMediaList* audioMediaList,
-                                           WebKitWebUserMediaList* audioMediaList)
+void webkit_web_user_media_request_succeed(WebKitWebUserMediaRequest* webRequest, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
 {
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(audioMediaList));
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(videoMediaList));
 
-    MediaStreamSourceVector& audioSources = core(audioMediaList);
-    MediaStreamSourceVector& videoSources = core(videoMediaList);
+    WebCore::MediaStreamSourceVector& audioSources = core(audioMediaList);
+    WebCore::MediaStreamSourceVector& videoSources = core(videoMediaList);
 
     for (size_t i = audioSources.size() - 1; i != (size_t) -1; --i)
         if (!webkit_web_user_media_list_is_item_selected(audioMediaList, i))
@@ -162,14 +161,13 @@ void webkit_web_user_media_request_succeed(WebKitWebUserMediaRequest *webRequest
 
 /**
  * webkit_web_view_reject_user_media_request:
- * @webView: a #WebKitWebView
  * @webRequest: a #WebKitWebUserMediaRequest
  *
  * This method should be called by the application when the user rejected a userMedia request.
  *
- * Since: 2.0.0
+ * Since: 2.0
  **/
-void webkit_web_user_media_request_fail(WebKitWebUserMediaRequest *webRequest)
+void webkit_web_user_media_request_fail(WebKitWebUserMediaRequest* webRequest)
 {
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
     core(webRequest)->fail();

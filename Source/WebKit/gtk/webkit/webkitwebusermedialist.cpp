@@ -34,7 +34,7 @@
  * #WebKitWebUserMediaList contains a list of
  * audio or video sources from a WebUserMediaRequest
  *
- * Since: 2.0.0
+ * Since: 2.0
  */
 
 using namespace WebKit;
@@ -79,7 +79,7 @@ static void webkit_web_user_media_list_init(WebKitWebUserMediaList* list)
  *
  * Return value: number of elements.
  *
- * Since: 2.0.0
+ * Since: 2.0
  */
 guint webkit_web_user_media_list_get_length(WebKitWebUserMediaList* list)
 {
@@ -98,7 +98,7 @@ guint webkit_web_user_media_list_get_length(WebKitWebUserMediaList* list)
  *
  * Return value: the device id of the @index given element.
  *
- * Since: 2.0.0
+ * Since: 2.0
  */
 const gchar* webkit_web_user_media_list_get_item_name(WebKitWebUserMediaList* list, guint index)
 {
@@ -119,7 +119,7 @@ const gchar* webkit_web_user_media_list_get_item_name(WebKitWebUserMediaList* li
  *
  * Return value: True if the device represented by @index is marked as selected.
  *
- * Since: 2.0.0
+ * Since: 2.0
  */
 gboolean webkit_web_user_media_list_is_item_selected(WebKitWebUserMediaList* list, guint index)
 {
@@ -136,7 +136,7 @@ gboolean webkit_web_user_media_list_is_item_selected(WebKitWebUserMediaList* lis
  *
  * Mark a device as selecteed.
  *
- * Since: 2.0.0
+ * Since: 2.0
  */
 void webkit_web_user_media_list_select_item(WebKitWebUserMediaList* list, guint index)
 {

@@ -17,8 +17,6 @@
  * Boston, MA 02110-1301, USA.
  *
  */
-
-
 #ifndef UserMediaClientGtk_h
 #define UserMediaClientGtk_h
 
@@ -49,7 +47,7 @@ private:
     WebKitWebView* m_webView;
 };
 
-} // namespace WebKit;
+} // namespace WebKit
 
 #endif // ENABLE(MEDIA_STREAM)
 

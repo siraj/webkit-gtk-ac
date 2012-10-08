@@ -20,9 +20,10 @@
 #ifndef webkitwebusermediarequest_h
 #define webkitwebusermediarequest_h
 
+#include "webkitwebusermedialist.h"
+
 #include <glib-object.h>
 #include <glib.h>
-
 #include <webkit/webkitdefines.h>
 
 G_BEGIN_DECLS
@@ -57,15 +58,15 @@ WEBKIT_API gboolean
 webkit_web_user_media_request_wants_video              (WebKitWebUserMediaRequest *request);
 
 WEBKIT_API WebKitSecurityOrigin *
-webkit_web_user_media_request_get_origin               (WebKitWebUserMediaRequest *request);
+webkit_web_user_media_request_get_security_origin      (WebKitWebUserMediaRequest *request);
 
 WEBKIT_API void
-webkit_web_user_media_request_fail                     (WebKitWebUserMediaRequest *request,
+webkit_web_user_media_request_fail                     (WebKitWebUserMediaRequest *request);
 
 WEBKIT_API void
-webkit_web_user_media_request_succeed                  (WebKitWebUserMediaRequest *request,
+webkit_web_user_media_request_succeed                  (WebKitWebUserMediaRequest *webRequest,
                                                         WebKitWebUserMediaList* audioMediaList,
-                                                        WebKitWebUserMediaList* audioMediaList);
+                                                        WebKitWebUserMediaList* videoMediaList);
 
 G_END_DECLS
 

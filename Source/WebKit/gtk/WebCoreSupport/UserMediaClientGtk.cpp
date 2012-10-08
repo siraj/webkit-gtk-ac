@@ -18,12 +18,10 @@
  *
  */
 
-
 #include "config.h"
 #include "UserMediaClientGtk.h"
 
 #if ENABLE(MEDIA_STREAM)
-
 #include "webkitwebusermedialistprivate.h"
 #include "webkitwebusermediarequestprivate.h"
 
@@ -44,10 +42,10 @@ void UserMediaClientGtk::pageDestroyed()
 {
 }
 
-void UserMediaClientGtk::requestUserMedia(WTF::PassRefPtr<UserMediaRequest> prpRequest, const MediaStreamSourceVector& audioSources, const MediaStreamSourceVector& videoSources)
+void UserMediaClientGtk::requestUserMedia(WTF::PassRefPtr<UserMediaRequest> prpRequest, const MediaStreamSourceVector& audioSource, const MediaStreamSourceVector& videoSource)
 {
     RefPtr<UserMediaRequest> request = prpRequest;
-    g_signal_emit_by_name(m_webView, "user-media-requested", kitNew(request.get()), kitNew(audioSources), kitNew(videoSources));
+    g_signal_emit_by_name(m_webView, "user-media-requested", kitNew(request.get()), kitNew(audioSource), kitNew(videoSource));
 }
 
 void UserMediaClientGtk::cancelUserMediaRequest(UserMediaRequest* request)

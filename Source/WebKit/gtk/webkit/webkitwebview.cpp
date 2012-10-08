@@ -104,10 +104,10 @@
 #include "webkitwebhistoryitemprivate.h"
 #include "webkitwebinspector.h"
 #include "webkitwebinspectorprivate.h"
-#include "webkitwebplugindatabaseprivate.h"
 #include "webkitwebpolicydecision.h"
 #include "webkitwebresource.h"
 #include "webkitwebsettingsprivate.h"
+#include "webkitwebplugindatabaseprivate.h"
 #include "webkitwebusermedialistprivate.h"
 #include "webkitwebusermediarequestprivate.h"
 #include "webkitwebwindowfeatures.h"
@@ -2877,6 +2877,7 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
             WEBKIT_TYPE_WEB_USER_MEDIA_LIST,
             WEBKIT_TYPE_WEB_USER_MEDIA_LIST);
 
+
     /**
      * WebKitWebView::user-media-request-cancelled:
      * @web_view: the object which received the signal
@@ -2886,15 +2887,14 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
      *
      * Since: 2.0.0
      */
-    webkit_web_view_signals[USER_MEDIA_REQUEST_CANCELLED] =
-            g_signal_new("user-media-request-cancelled",
-                         G_TYPE_FROM_CLASS(webViewClass),
-                         G_SIGNAL_RUN_LAST,
-                         0,
-                         0, 0,
-                         webkit_marshal_VOID__OBJECT,
-                         G_TYPE_NONE, 1,
-                         WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST);
+    webkit_web_view_signals[USER_MEDIA_REQUEST_CANCELLED] = g_signal_new("user-media-request-cancelled",
+            G_TYPE_FROM_CLASS(webViewClass),
+            G_SIGNAL_RUN_LAST,
+            0,
+            0, 0,
+            webkit_marshal_VOID__OBJECT,
+            G_TYPE_NONE, 1,
+            WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST);
 
 
     /**
