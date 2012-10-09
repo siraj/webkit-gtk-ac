@@ -1201,7 +1201,7 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
     gboolean hasVideo = (videoListLength > 0);
     gint i = 0;
 
-    dialog = gtk_dialog_new_with_buttons("User Media Selector",
+    dialog = gtk_dialog_new_with_buttons(_("User Media Selector"),
                                          GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(webView))),
                                          GTK_DIALOG_DESTROY_WITH_PARENT,
                                          GTK_STOCK_CANCEL,
@@ -1221,17 +1221,17 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
     gtk_box_set_spacing(GTK_BOX(actionArea), 6);
 
     if (!hasAudio && !hasVideo) {
-        audioMessage = gtk_label_new("No user media available");
+        audioMessage = gtk_label_new(_("No user media available"));
         gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
         gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
     } else if (wantsAudio) {
-        audioMessage = gtk_label_new(hasAudio ? "Select from available user audio" : "No user audio available");
+        audioMessage = gtk_label_new(hasAudio ? _("Select from available user audio") : _("No user audio available"));
         gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
         gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
     }
 
     if (hasAudio) {
-        frame = gtk_frame_new("Audio");
+        frame = gtk_frame_new(_("Audio"));
 #if GTK_CHECK_VERSION(3, 2, 0)
         vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #else
@@ -1251,9 +1251,9 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
 
     if (wantsVideo) {
         if (hasVideo) {
-            videoMessage = gtk_label_new("Select from available user video");
+            videoMessage = gtk_label_new(_("Select from available user video"));
         } else if (!wantsAudio || hasAudio)
-            videoMessage = gtk_label_new("No user video available");
+            videoMessage = gtk_label_new(_("No user video available"));
         if (videoMessage) {
             gtk_misc_set_alignment(GTK_MISC(videoMessage), 0, 0);
             gtk_box_pack_start(GTK_BOX(contentArea), videoMessage, FALSE, FALSE, 6);
@@ -1261,7 +1261,7 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
     }
 
     if (hasVideo) {
-        frame = gtk_frame_new("Video");
+        frame = gtk_frame_new(_("Video"));
 #if GTK_CHECK_VERSION(3, 2, 0)
         vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #else
