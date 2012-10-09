@@ -22,6 +22,7 @@
 #include "UserMediaClientGtk.h"
 
 #if ENABLE(MEDIA_STREAM)
+#include "NotImplemented.h"
 #include "webkitwebusermedialistprivate.h"
 #include "webkitwebusermediarequestprivate.h"
 
@@ -50,7 +51,7 @@ void UserMediaClientGtk::requestUserMedia(WTF::PassRefPtr<UserMediaRequest> prpR
 
 void UserMediaClientGtk::cancelUserMediaRequest(UserMediaRequest* request)
 {
-    g_signal_emit_by_name(m_webView, "user-media-request-cancelled", 0);
+    notImplemented();
 }
 
 } // namespace WebKit;

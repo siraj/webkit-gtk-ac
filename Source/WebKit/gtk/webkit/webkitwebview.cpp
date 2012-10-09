@@ -1279,9 +1279,6 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
         gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
     }
 
-    // TODO: FIX THIS
-    //g_signal_connect(webView, "user-media-request-cancelled", G_CALLBACK(userMediaRequestCancelledCb), dialog);
-
     gtk_widget_show_all(dialog);
 
     if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
@@ -1294,8 +1291,6 @@ static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView
     } else
         webkit_web_user_media_request_fail(request);
 
-    // TODO: SAME FROM TODO
-    // g_signal_handlers_disconnect_by_func(webView, (gpointer) userMediaRequestCancelledCb, dialog);
     gtk_widget_destroy(dialog);
 
     return TRUE;
@@ -2876,26 +2871,6 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
             WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST,
             WEBKIT_TYPE_WEB_USER_MEDIA_LIST,
             WEBKIT_TYPE_WEB_USER_MEDIA_LIST);
-
-
-    /**
-     * WebKitWebView::user-media-request-cancelled:
-     * @web_view: the object which received the signal
-     * @request: the #WebKitWebUserMediaRquest itself
-     *
-     * This signal will be emited when the user canceled its userMedia request.
-     *
-     * Since: 2.0.0
-     */
-    webkit_web_view_signals[USER_MEDIA_REQUEST_CANCELLED] = g_signal_new("user-media-request-cancelled",
-            G_TYPE_FROM_CLASS(webViewClass),
-            G_SIGNAL_RUN_LAST,
-            0,
-            0, 0,
-            webkit_marshal_VOID__OBJECT,
-            G_TYPE_NONE, 1,
-            WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST);
-
 
     /**
      * WebKitWebView::entering-fullscreen:
