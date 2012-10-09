@@ -158,10 +158,12 @@ struct _WebKitWebViewClass {
                                                            const gchar          *message,
                                                            const gchar          *default_value,
                                                            gchar*               *value);
-    gboolean                   (* choose_media_device)    (WebKitWebView        *web_view,
+
+    gboolean                   (* choose_media_device)    (WebKitWebView             *web_view,
                                                            WebKitWebUserMediaRequest *request,
                                                            WebKitWebUserMediaList    *audio,
                                                            WebKitWebUserMediaList    *video);
+
     gboolean                   (* console_message)        (WebKitWebView        *web_view,
                                                            const gchar          *message,
                                                            guint                 line_number,

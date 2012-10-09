@@ -1183,15 +1183,15 @@ static gboolean webkit_web_view_real_script_prompt(WebKitWebView* webView, WebKi
 
 static gboolean webkit_web_view_real_choose_media_device(WebKitWebView *webView, WebKitWebUserMediaRequest* request, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
 {
-    GtkWidget *dialog;
-    GtkWidget *contentArea;
-    GtkWidget *actionArea;
-    GtkWidget *frame;
-    GtkWidget *vbox;
-    GtkWidget *audioCombo = 0;
-    GtkWidget *videoCombo = 0;
-    GtkWidget *audioMessage = 0;
-    GtkWidget *videoMessage = 0;
+    GtkWidget* dialog;
+    GtkWidget* contentArea;
+    GtkWidget* actionArea;
+    GtkWidget* frame;
+    GtkWidget* vbox;
+    GtkWidget* audioCombo = 0;
+    GtkWidget* videoCombo = 0;
+    GtkWidget* audioMessage = 0;
+    GtkWidget* videoMessage = 0;
     gboolean wantsAudio = webkit_web_user_media_request_wants_audio(request);
     gboolean wantsVideo = webkit_web_user_media_request_wants_video(request);
     gint audioListLength = webkit_web_user_media_list_get_length(audioMediaList);
