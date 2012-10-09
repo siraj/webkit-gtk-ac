@@ -46,7 +46,7 @@ void UserMediaClientGtk::pageDestroyed()
 void UserMediaClientGtk::requestUserMedia(WTF::PassRefPtr<UserMediaRequest> prpRequest, const MediaStreamSourceVector& audioSource, const MediaStreamSourceVector& videoSource)
 {
     RefPtr<UserMediaRequest> request = prpRequest;
-    g_signal_emit_by_name(m_webView, "user-media-requested", kitNew(request.get()), kitNew(audioSource), kitNew(videoSource));
+    g_signal_emit_by_name(m_webView, "choose-media-device", kitNew(request.get()), kitNew(audioSource), kitNew(videoSource));
 }
 
 void UserMediaClientGtk::cancelUserMediaRequest(UserMediaRequest* request)

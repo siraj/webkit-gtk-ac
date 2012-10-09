@@ -158,7 +158,7 @@ struct _WebKitWebViewClass {
                                                            const gchar          *message,
                                                            const gchar          *default_value,
                                                            gchar*               *value);
-    gboolean                   (* user_media_requested)   (WebKitWebView        *web_view,
+    gboolean                   (* choose_media_device)    (WebKitWebView        *web_view,
                                                            WebKitWebUserMediaRequest *request,
                                                            WebKitWebUserMediaList    *audio,
                                                            WebKitWebUserMediaList    *video);

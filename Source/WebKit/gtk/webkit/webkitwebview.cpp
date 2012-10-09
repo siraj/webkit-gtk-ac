@@ -214,8 +214,7 @@ enum {
     EDITING_ENDED,
     VIEWPORT_ATTRIBUTES_RECOMPUTE_REQUESTED,
     VIEWPORT_ATTRIBUTES_CHANGED,
-    USER_MEDIA_REQUESTED,
-    USER_MEDIA_REQUEST_CANCELLED,
+    CHOOSE_MEDIA_DEVICE,
     RESOURCE_RESPONSE_RECEIVED,
     RESOURCE_LOAD_FINISHED,
     RESOURCE_CONTENT_LENGTH_RECEIVED,
@@ -1182,7 +1181,7 @@ static gboolean webkit_web_view_real_script_prompt(WebKitWebView* webView, WebKi
     return TRUE;
 }
 
-static gboolean webkit_web_view_real_user_media_requested(WebKitWebView *webView, WebKitWebUserMediaRequest* request, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
+static gboolean webkit_web_view_real_choose_media_device(WebKitWebView *webView, WebKitWebUserMediaRequest* request, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
 {
     GtkWidget *dialog;
     GtkWidget *contentArea;
@@ -2847,7 +2846,7 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
             WEBKIT_TYPE_VIEWPORT_ATTRIBUTES);
 
     /**
-     * WebKitWebView::user-media-requested:
+     * WebKitWebView::choose-media-device:
      * @web_view: the object which received the signal
      * @request: the #WebKitWebUserMediaRquest attribute which generated the request.
      * @audioList: a #WebKitWebUserMediaList containing the available audio media options.
@@ -2857,14 +2856,14 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
      * information and the available options to be selected.
      *
      * Then the user is expected to call either webkit_web_user_media_request_succeed() or
-     * webkit_web_view_reject_user_media_request() to accept or reject the request.
+     * webkit_web_user_media_request_fail() to accept or reject the request.
      *
      * Since: 2.0.0
      */
-    webkit_web_view_signals[USER_MEDIA_REQUESTED] = g_signal_new("user-media-requested",
+    webkit_web_view_signals[CHOOSE_MEDIA_DEVICE] = g_signal_new("choose-media-device",
             G_TYPE_FROM_CLASS(webViewClass),
             G_SIGNAL_RUN_LAST,
-            G_STRUCT_OFFSET(WebKitWebViewClass, user_media_requested),
+            G_STRUCT_OFFSET(WebKitWebViewClass, choose_media_device),
             g_signal_accumulator_true_handled, 0,
             webkit_marshal_BOOLEAN__OBJECT_OBJECT_OBJECT,
             G_TYPE_BOOLEAN, 3,
@@ -3061,7 +3060,7 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
     webViewClass->script_alert = webkit_web_view_real_script_alert;
     webViewClass->script_confirm = webkit_web_view_real_script_confirm;
     webViewClass->script_prompt = webkit_web_view_real_script_prompt;
-    webViewClass->user_media_requested = webkit_web_view_real_user_media_requested;
+    webViewClass->choose_media_device = webkit_web_view_real_choose_media_device;
     webViewClass->console_message = webkit_web_view_real_console_message;
     webViewClass->select_all = webkit_web_view_real_select_all;
     webViewClass->cut_clipboard = webkit_web_view_real_cut_clipboard;
