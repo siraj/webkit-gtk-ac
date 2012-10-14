@@ -70,4 +70,4 @@ webkit_web_user_media_request_succeed                  (WebKitWebUserMediaReques
 
 G_END_DECLS
 
-#endif // webkitwebusermediarequest_h
+#endif
