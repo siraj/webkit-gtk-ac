@@ -64,6 +64,7 @@
 #include "GeolocationController.h"
 #include "GraphicsContext.h"
 #include "GtkUtilities.h"
+#include "GtkMediaChooserDialog.h"
 #include "GtkVersioning.h"
 #include "HTMLNames.h"
 #include "HitTestRequest.h"
@@ -1181,117 +1182,46 @@ static gboolean webkit_web_view_real_script_prompt(WebKitWebView* webView, WebKi
     return TRUE;
 }
 
+typedef struct {
+    WebKitWebUserMediaRequest* request;
+    WebKitWebUserMediaList* audioMediaList;
+    WebKitWebUserMediaList* videoMediaList;
+    GtkMediaChooserDialog* dialog;
+} UserMediaSelectorData;
+
+static void mediaChooserResponseCallback(GtkWidget* widget, gint responseID, UserMediaSelectorData *data)
+{
+    if (responseID == GTK_RESPONSE_OK) {
+        if (data->dialog->selectedAudio() != -1)
+            webkit_web_user_media_list_select_item(data->audioMediaList, data->dialog->selectedAudio());
+
+        if (data->dialog->selectedVideo() != -1)
+            webkit_web_user_media_list_select_item(data->videoMediaList, data->dialog->selectedVideo());
+
+        webkit_web_user_media_request_succeed(data->request, data->audioMediaList, data->videoMediaList);
+    } else
+        webkit_web_user_media_request_fail(data->request);
+
+    g_object_unref(data->request);
+    g_object_unref(data->audioMediaList);
+    g_object_unref(data->videoMediaList);
+    delete data->dialog;
+    g_free(data);
+}
+
 static gboolean webkit_web_view_real_choose_media_device(WebKitWebView *webView, WebKitWebUserMediaRequest* request, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
 {
-    GtkWidget* dialog;
-    GtkWidget* contentArea;
-    GtkWidget* actionArea;
-    GtkWidget* frame;
-    GtkWidget* vbox;
-    GtkWidget* audioCombo = 0;
-    GtkWidget* videoCombo = 0;
-    GtkWidget* audioMessage = 0;
-    GtkWidget* videoMessage = 0;
-    gboolean wantsAudio = webkit_web_user_media_request_wants_audio(request);
-    gboolean wantsVideo = webkit_web_user_media_request_wants_video(request);
-    gint audioListLength = webkit_web_user_media_list_get_length(audioMediaList);
-    gint videoListLength = webkit_web_user_media_list_get_length(videoMediaList);
-    gboolean hasAudio = (audioListLength > 0);
-    gboolean hasVideo = (videoListLength > 0);
-    gint i = 0;
+    GtkWidget* toplevel = gtk_widget_get_toplevel(GTK_WIDGET(webView));
+    GtkMediaChooserDialog* dialog = new GtkMediaChooserDialog(toplevel, core(request), core(audioMediaList), core(videoMediaList));
+    GtkWidget* widget = dialog->widget();
+    UserMediaSelectorData* data = g_new(UserMediaSelectorData, 1);
 
-    dialog = gtk_dialog_new_with_buttons(_("User Media Selector"),
-                                         GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(webView))),
-                                         GTK_DIALOG_DESTROY_WITH_PARENT,
-                                         GTK_STOCK_CANCEL,
-                                         GTK_RESPONSE_CANCEL,
-                                         GTK_STOCK_OK,
-                                         GTK_RESPONSE_OK,
-                                         NULL);
+    data->request = (WebKitWebUserMediaRequest*) g_object_ref(request);
+    data->audioMediaList = (WebKitWebUserMediaList*) g_object_ref(audioMediaList);
+    data->videoMediaList = (WebKitWebUserMediaList*) g_object_ref(videoMediaList);
+    data->dialog = dialog;
 
-    gtk_window_set_resizable(GTK_WINDOW(dialog), FALSE);
-    gtk_container_set_border_width(GTK_CONTAINER(dialog), 5);
-
-    contentArea = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-    gtk_box_set_spacing(GTK_BOX(contentArea), 2);
-
-    actionArea = gtk_dialog_get_action_area(GTK_DIALOG(dialog));
-    gtk_container_set_border_width(GTK_CONTAINER(actionArea), 5);
-    gtk_box_set_spacing(GTK_BOX(actionArea), 6);
-
-    if (!hasAudio && !hasVideo) {
-        audioMessage = gtk_label_new(_("No user media available"));
-        gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
-        gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
-    } else if (wantsAudio) {
-        audioMessage = gtk_label_new(hasAudio ? _("Select from available user audio") : _("No user audio available"));
-        gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
-        gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
-    }
-
-    if (hasAudio) {
-        frame = gtk_frame_new(_("Audio"));
-#if GTK_CHECK_VERSION(3, 2, 0)
-        vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-#else
-        vbox = gtk_vbox_new(TRUE, 0);
-#endif
-        gtk_container_set_border_width(GTK_CONTAINER(vbox), 3);
-
-        audioCombo = gtk_combo_box_text_new();
-        for (i = 0; i < audioListLength; i++)
-            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(audioCombo), webkit_web_user_media_list_get_item_name(audioMediaList, i));
-        gtk_combo_box_set_active(GTK_COMBO_BOX(audioCombo), 0);
-        gtk_container_add(GTK_CONTAINER(vbox), audioCombo);
-
-        gtk_container_add(GTK_CONTAINER(frame), vbox);
-        gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
-    }
-
-    if (wantsVideo) {
-        if (hasVideo) {
-            videoMessage = gtk_label_new(_("Select from available user video"));
-        } else if (!wantsAudio || hasAudio)
-            videoMessage = gtk_label_new(_("No user video available"));
-        if (videoMessage) {
-            gtk_misc_set_alignment(GTK_MISC(videoMessage), 0, 0);
-            gtk_box_pack_start(GTK_BOX(contentArea), videoMessage, FALSE, FALSE, 6);
-        }
-    }
-
-    if (hasVideo) {
-        frame = gtk_frame_new(_("Video"));
-#if GTK_CHECK_VERSION(3, 2, 0)
-        vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-#else
-        vbox = gtk_vbox_new(TRUE, 0);
-#endif
-        gtk_container_set_border_width(GTK_CONTAINER(vbox), 3);
-
-        videoCombo = gtk_combo_box_text_new();
-        for (i = 0; i < videoListLength; i++)
-            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(videoCombo), webkit_web_user_media_list_get_item_name(videoMediaList, i));
-        gtk_combo_box_set_active(GTK_COMBO_BOX(videoCombo), 0);
-        gtk_container_add(GTK_CONTAINER(vbox), videoCombo);
-
-        gtk_container_add(GTK_CONTAINER(frame), vbox);
-        gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
-    }
-
-    gtk_widget_show_all(dialog);
-
-    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK) {
-        if (audioCombo)
-            webkit_web_user_media_list_select_item(audioMediaList, gtk_combo_box_get_active(GTK_COMBO_BOX(audioCombo)));
-        if (videoCombo)
-            webkit_web_user_media_list_select_item(videoMediaList, gtk_combo_box_get_active(GTK_COMBO_BOX(videoCombo)));
-
-        webkit_web_user_media_request_succeed(request, audioMediaList, videoMediaList);
-    } else
-        webkit_web_user_media_request_fail(request);
-
-    gtk_widget_destroy(dialog);
-
+    g_signal_connect(widget, "response", G_CALLBACK(mediaChooserResponseCallback), data);
     return TRUE;
 }
 
