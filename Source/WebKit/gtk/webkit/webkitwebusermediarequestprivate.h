@@ -35,6 +35,6 @@ WebKitWebUserMediaRequest* kitNew(WebCore::UserMediaRequest*);
 
 }
 
-#endif /* ENABLE(MEDIA_STREAM) */
+#endif // ENABLE(MEDIA_STREAM)
 
-#endif /* webkitwebusermediarequestprivate_h */
+#endif // webkitwebusermediarequestprivate_h

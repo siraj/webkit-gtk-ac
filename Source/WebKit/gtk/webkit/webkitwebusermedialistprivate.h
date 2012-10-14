@@ -32,6 +32,6 @@ WebKitWebUserMediaList* kitNew(const WebCore::MediaStreamSourceVector&);
 
 }
 
-#endif /* ENABLE(MEDIA_STREAM) */
+#endif // ENABLE(MEDIA_STREAM)
 
-#endif /* webkitwebusermedialistprivate_h */
+#endif // webkitwebusermedialistprivate_h

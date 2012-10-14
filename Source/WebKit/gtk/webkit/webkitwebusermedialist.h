@@ -65,4 +65,4 @@ webkit_web_user_media_list_select_item       (WebKitWebUserMediaList *list,
 
 G_END_DECLS
 
-#endif /* webkitwebusermedialist_h */
+#endif // webkitwebusermedialist_h

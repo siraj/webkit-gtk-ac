@@ -63,8 +63,8 @@
 #include "GeolocationClientGtk.h"
 #include "GeolocationController.h"
 #include "GraphicsContext.h"
-#include "GtkUtilities.h"
 #include "GtkMediaChooserDialog.h"
+#include "GtkUtilities.h"
 #include "GtkVersioning.h"
 #include "HTMLNames.h"
 #include "HitTestRequest.h"
@@ -1222,6 +1222,7 @@ static gboolean webkit_web_view_real_choose_media_device(WebKitWebView *webView,
     data->dialog = dialog;
 
     g_signal_connect(widget, "response", G_CALLBACK(mediaChooserResponseCallback), data);
+    dialog->show();
     return TRUE;
 }
 

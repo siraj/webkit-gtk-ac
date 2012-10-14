@@ -19,9 +19,9 @@
 
 #include "config.h"
 #include "GtkMediaChooserDialog.h"
+
 #include "MediaStreamSource.h"
 #include "UserMediaRequest.h"
-#include "GtkVersioning.h"
 
 #include <glib/gi18n-lib.h>
 #include <gtk/gtk.h>
@@ -34,9 +34,6 @@ GtkMediaChooserDialog::GtkMediaChooserDialog(GtkWidget* parent, UserMediaRequest
     , m_audioCombo(0)
     , m_videoCombo(0)
 {
-    GtkWidget* contentArea;
-    GtkWidget* actionArea;
-    GtkWidget* frame;
     GtkWidget* vbox;
     GtkWidget* audioMessage = 0;
     GtkWidget* videoMessage = 0;
@@ -49,21 +46,21 @@ GtkMediaChooserDialog::GtkMediaChooserDialog(GtkWidget* parent, UserMediaRequest
     gint i = 0;
 
     m_dialog = gtk_dialog_new_with_buttons(_("User Media Selector"),
-                                         parent? GTK_WINDOW(parent) : 0,
-                                         GTK_DIALOG_DESTROY_WITH_PARENT,
-                                         GTK_STOCK_CANCEL,
-                                         GTK_RESPONSE_CANCEL,
-                                         GTK_STOCK_OK,
-                                         GTK_RESPONSE_OK,
-                                         NULL);
+        parent? GTK_WINDOW(parent) : 0,
+        GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_STOCK_CANCEL,
+        GTK_RESPONSE_CANCEL,
+        GTK_STOCK_OK,
+        GTK_RESPONSE_OK,
+        0);
 
     gtk_window_set_resizable(GTK_WINDOW(m_dialog), FALSE);
     gtk_container_set_border_width(GTK_CONTAINER(m_dialog), 5);
 
-    contentArea = gtk_dialog_get_content_area(GTK_DIALOG(m_dialog));
+    GtkWidget* contentArea = gtk_dialog_get_content_area(GTK_DIALOG(m_dialog));
     gtk_box_set_spacing(GTK_BOX(contentArea), 2);
 
-    actionArea = gtk_dialog_get_action_area(GTK_DIALOG(m_dialog));
+    GtkWidget* actionArea = gtk_dialog_get_action_area(GTK_DIALOG(m_dialog));
     gtk_container_set_border_width(GTK_CONTAINER(actionArea), 5);
     gtk_box_set_spacing(GTK_BOX(actionArea), 6);
 
@@ -78,7 +75,7 @@ GtkMediaChooserDialog::GtkMediaChooserDialog(GtkWidget* parent, UserMediaRequest
     }
 
     if (hasAudio) {
-        frame = gtk_frame_new(_("Audio"));
+        GtkWidget* frame = gtk_frame_new(_("Audio"));
 #if GTK_CHECK_VERSION(3, 2, 0)
         vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #else
@@ -108,7 +105,7 @@ GtkMediaChooserDialog::GtkMediaChooserDialog(GtkWidget* parent, UserMediaRequest
     }
 
     if (hasVideo) {
-        frame = gtk_frame_new(_("Video"));
+        GtkWidget* frame = gtk_frame_new(_("Video"));
 #if GTK_CHECK_VERSION(3, 2, 0)
         vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #else
@@ -136,19 +133,19 @@ int GtkMediaChooserDialog::selectedAudio()
 {
     if (m_audioCombo)
         return gtk_combo_box_get_active(GTK_COMBO_BOX(m_audioCombo));
-    else
-        return -1;
+
+    return -1;
 }
 
 int GtkMediaChooserDialog::selectedVideo()
 {
     if (m_videoCombo)
-       return gtk_combo_box_get_active(GTK_COMBO_BOX(m_videoCombo));
-    else
-        return -1;
+        return gtk_combo_box_get_active(GTK_COMBO_BOX(m_videoCombo));
+
+    return -1;
 }
 
-void* GtkMediaChooserDialog::show()
+void GtkMediaChooserDialog::show()
 {
     gtk_widget_show_all(m_dialog);
 }

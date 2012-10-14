@@ -195,4 +195,4 @@ WebKitWebUserMediaRequest* kitNew(WebCore::UserMediaRequest* request)
 
 }
 
-#endif /* ENABLE(MEDIA_STREAM) */
+#endif // ENABLE(MEDIA_STREAM)

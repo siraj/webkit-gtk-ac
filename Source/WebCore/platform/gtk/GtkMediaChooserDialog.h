@@ -33,7 +33,7 @@ class GtkMediaChooserDialog {
     WTF_MAKE_FAST_ALLOCATED;
 
 public:
-    GtkMediaChooserDialog(GtkWidget *parent, UserMediaRequest *request, const MediaStreamSourceVector&, const MediaStreamSourceVector&);
+    GtkMediaChooserDialog(GtkWidget *parent, UserMediaRequest*, const MediaStreamSourceVector&, const MediaStreamSourceVector&);
     ~GtkMediaChooserDialog();
 
     void show();
@@ -50,4 +50,4 @@ private:
 
 } // namespace WebCore
 
-#endif //GtkMediaChooserDialog_h
+#endif // GtkMediaChooserDialog_h

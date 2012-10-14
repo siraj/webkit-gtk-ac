@@ -164,4 +164,4 @@ WebKitWebUserMediaList* kitNew(const WebCore::MediaStreamSourceVector& sources)
 
 }
 
-#endif /* ENABLE(MEDIA_STREAM) */
+#endif // ENABLE(MEDIA_STREAM)
