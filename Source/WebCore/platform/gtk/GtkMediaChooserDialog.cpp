@@ -21,8 +21,9 @@
 #include "GtkMediaChooserDialog.h"
 
 #include "MediaStreamSource.h"
+#include "ScriptExecutionContext.h"
+#include "SecurityOrigin.h"
 #include "UserMediaRequest.h"
-
 #include <glib/gi18n-lib.h>
 #include <gtk/gtk.h>
 #include <wtf/text/CString.h>
@@ -37,15 +38,24 @@ GtkMediaChooserDialog::GtkMediaChooserDialog(GtkWidget* parent, UserMediaRequest
     GtkWidget* vbox;
     GtkWidget* audioMessage = 0;
     GtkWidget* videoMessage = 0;
-    gboolean wantsAudio = request->audio();
-    gboolean wantsVideo = request->video();
-    gint audioListLength = audioSource.size();
-    gint videoListLength = videoSource.size();
-    gboolean hasAudio = (audioListLength > 0);
-    gboolean hasVideo = (videoListLength > 0);
-    gint i = 0;
+    bool wantsAudio = request->audio();
+    bool wantsVideo = request->video();
+    int audioListLength = audioSource.size();
+    int videoListLength = videoSource.size();
+    bool hasAudio = (audioListLength > 0);
+    bool hasVideo = (videoListLength > 0);
+    int i = 0;
 
-    m_dialog = gtk_dialog_new_with_buttons(_("User Media Selector"),
+    gchar* origin = g_strdup(request->scriptExecutionContext()->securityOrigin()->toString().utf8().data());
+    gchar* title;
+    if (wantsAudio && wantsVideo)
+        title = g_strdup_printf(_("%s wants to use your camera and microphone"), origin);
+    else if (wantsAudio)
+        title = g_strdup_printf(_("%s wants to use your microphone"), origin);
+    else
+        title = g_strdup_printf(_("%s wants to use your camera"), origin);
+
+    m_dialog = gtk_dialog_new_with_buttons(title,
         parent? GTK_WINDOW(parent) : 0,
         GTK_DIALOG_DESTROY_WITH_PARENT,
         GTK_STOCK_CANCEL,
@@ -65,11 +75,11 @@ GtkMediaChooserDialog::GtkMediaChooserDialog(GtkWidget* parent, UserMediaRequest
     gtk_box_set_spacing(GTK_BOX(actionArea), 6);
 
     if (!hasAudio && !hasVideo) {
-        audioMessage = gtk_label_new(_("No user media available"));
+        audioMessage = gtk_label_new(_("No video or audio input devices available"));
         gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
         gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
     } else if (wantsAudio) {
-        audioMessage = gtk_label_new(hasAudio ? _("Select from available user audio") : _("No user audio available"));
+        audioMessage = gtk_label_new(hasAudio ? _("Select an audio input device") : _("No audio input device available"));
         gtk_misc_set_alignment(GTK_MISC(audioMessage), 0, 0);
         gtk_box_pack_start(GTK_BOX(contentArea), audioMessage, FALSE, FALSE, 6);
     }
@@ -85,7 +95,7 @@ GtkMediaChooserDialog::GtkMediaChooserDialog(GtkWidget* parent, UserMediaRequest
 
         m_audioCombo = gtk_combo_box_text_new();
         for (i = 0; i < audioListLength; i++)
-            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(m_audioCombo), g_strdup(audioSource[i]->name().utf8().data()));
+            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(m_audioCombo), audioSource[i]->name().utf8().data());
         gtk_combo_box_set_active(GTK_COMBO_BOX(m_audioCombo), 0);
         gtk_container_add(GTK_CONTAINER(vbox), m_audioCombo);
 
@@ -95,9 +105,9 @@ GtkMediaChooserDialog::GtkMediaChooserDialog(GtkWidget* parent, UserMediaRequest
 
     if (wantsVideo) {
         if (hasVideo) {
-            videoMessage = gtk_label_new(_("Select from available user video"));
+            videoMessage = gtk_label_new(_("Select an video input device"));
         } else if (!wantsAudio || hasAudio)
-            videoMessage = gtk_label_new(_("No user video available"));
+            videoMessage = gtk_label_new(_("No video input device available"));
         if (videoMessage) {
             gtk_misc_set_alignment(GTK_MISC(videoMessage), 0, 0);
             gtk_box_pack_start(GTK_BOX(contentArea), videoMessage, FALSE, FALSE, 6);
@@ -115,13 +125,16 @@ GtkMediaChooserDialog::GtkMediaChooserDialog(GtkWidget* parent, UserMediaRequest
 
         m_videoCombo = gtk_combo_box_text_new();
         for (i = 0; i < videoListLength; i++)
-            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(m_videoCombo), g_strdup(videoSource[i]->name().utf8().data()));
+            gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(m_videoCombo), videoSource[i]->name().utf8().data());
         gtk_combo_box_set_active(GTK_COMBO_BOX(m_videoCombo), 0);
         gtk_container_add(GTK_CONTAINER(vbox), m_videoCombo);
 
         gtk_container_add(GTK_CONTAINER(frame), vbox);
         gtk_box_pack_start(GTK_BOX(contentArea), frame, FALSE, FALSE, 3);
     }
+
+    g_free(title);
+    g_free(origin);
 }
 
 GtkMediaChooserDialog::~GtkMediaChooserDialog()
