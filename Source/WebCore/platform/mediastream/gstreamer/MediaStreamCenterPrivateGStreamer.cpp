@@ -160,7 +160,7 @@ GstElementFactory* MediaStreamCenterPrivateGStreamer::storedElementFactory(const
     GstElementFactory* elementFactory = 0;
     ElementFactoryMap::iterator elementFactoryIt = m_elementFactoryMap.find(key);
     if (elementFactoryIt != m_elementFactoryMap.end())
-        elementFactory = (elementFactoryIt->second).get();
+        elementFactory = (elementFactoryIt->value).get();
     return elementFactory;
 }
 
@@ -172,7 +172,7 @@ String MediaStreamCenterPrivateGStreamer::storeSourceInfo(MediaStreamSource::Typ
 
     SourceInfoMap::iterator sourceInfoIt = m_sourceInfoMap.find(key);
     if (sourceInfoIt != m_sourceInfoMap.end())
-        return sourceInfoIt->first;
+        return sourceInfoIt->key;
 
     SourceInfo sourceInfo = {factoryKey, type, device};
     SourceInfoMap::AddResult result = m_sourceInfoMap.add(key, sourceInfo);
@@ -188,7 +188,7 @@ GstElement* MediaStreamCenterPrivateGStreamer::createSource(const String& source
     if (sourceInfoIt == m_sourceInfoMap.end())
         return 0;
 
-    SourceInfo sourceInfo = sourceInfoIt->second;
+    SourceInfo sourceInfo = sourceInfoIt->value;
 
     GstElementFactory* factory = storedElementFactory(sourceInfo.m_factoryKey);
     if (!factory)

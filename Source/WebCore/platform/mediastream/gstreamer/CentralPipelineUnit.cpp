@@ -104,7 +104,7 @@ bool CentralPipelineUnit::connectAndGetSourceElement(const String& sourceId, Gst
 
     CentralPipelineUnit::PipelineMap::iterator sourceIt = m_pipelineMap.find(sourceId);
     if (sourceIt != m_pipelineMap.end()) {
-        Source& source = sourceIt->second;
+        Source& source = sourceIt->value;
         LOG(MediaStream, "Source element %s already in pipeline, using it.", sourceId.ascii().data());
         *sourceElement = source.m_sourceElement.get();
         *sourcePad = source.m_sourcePad.get();
@@ -114,7 +114,7 @@ bool CentralPipelineUnit::connectAndGetSourceElement(const String& sourceId, Gst
     CentralPipelineUnit::SourceFactoryMap::iterator sourceFactoryIt = m_sourceFactoryMap.find(sourceId);
     if (sourceFactoryIt != m_sourceFactoryMap.end()) {
         LOG(MediaStream, "Found a SourceFactory. Creating source element %s", sourceId.ascii().data());
-        SourceFactory* sourceFactory = sourceFactoryIt->second;
+        SourceFactory* sourceFactory = sourceFactoryIt->value;
         *sourceElement = sourceFactory->createSource(sourceId, sourcePad);
         if (!*sourceElement) {
             LOG(MediaStream, "ERROR, unable to create source element");
@@ -335,11 +335,11 @@ void CentralPipelineUnit::removeSourceExtensionFromBehind(GstElement* sourceExte
         // Need to iterate or something..
         SourceIdLookupMap::iterator sidIt = m_sourceIdLookupMap.find(generateElementPadId(sourceExtension, seSrcPad));
         if (sidIt != m_sourceIdLookupMap.end()) {
-            String sourceId = sidIt->second;
+            String sourceId = sidIt->value;
 
             PipelineMap::iterator siIt = m_pipelineMap.find(sourceId);
             if (siIt != m_pipelineMap.end()) {
-                Source sourceInfo = siIt->second;
+                Source sourceInfo = siIt->value;
 
                 if (sourceInfo.m_removeWhenNotUsed) {
                     LOG(MediaStream, "Removing source %p with id=%s", sourceExtension, sourceId.ascii().data());
@@ -388,9 +388,9 @@ void CentralPipelineUnit::removeSourceExtensionFromBehind(GstElement* sourceExte
     if (!numSourceTeePads) {
         LOG(MediaStream, "source-tee of source extension did not have any source pads. See if we should remove it.");
         SourceIdLookupMap::iterator sidIt = m_sourceIdLookupMap.find(generateElementPadId(sourceElement, sourceSrcPad));
-        String sourceId = sidIt->second;
+        String sourceId = sidIt->value;
         PipelineMap::iterator siIt = m_pipelineMap.find(sourceId);
-        Source sourceInfo = siIt->second;
+        Source sourceInfo = siIt->value;
         if (sourceInfo.m_removeWhenNotUsed)
             removeSourceExtensionFromBehind(sourceElement);
     }
@@ -398,7 +398,7 @@ void CentralPipelineUnit::removeSourceExtensionFromBehind(GstElement* sourceExte
     // since disconnectSinkFromTee was used to remove the sourceExtension
     SourceIdLookupMap::iterator sidIt = m_sourceIdLookupMap.find(sourceExtensionAndPadId);
     if (sidIt != m_sourceIdLookupMap.end()) {
-        String sourceId = sidIt->second;
+        String sourceId = sidIt->value;
         LOG(MediaStream, "Removing sourceExtension with id %s", sourceId.ascii().data());
         m_pipelineMap.remove(sourceId);
         m_sourceIdLookupMap.remove(sourceExtensionAndPadId);
@@ -463,10 +463,10 @@ gint CentralPipelineUnit::disconnectSinkFromTee(GstElement* tee, GstElement* sin
     String sourceAndPadId = generateElementPadId(sink, 0);
     SourceIdLookupMap::iterator sidIt = m_sourceIdLookupMap.find(generateElementPadId(sink, 0));
     if (sidIt != m_sourceIdLookupMap.end()) {
-        String sourceId = sidIt->second;
+        String sourceId = sidIt->value;
         PipelineMap::iterator siIt = m_pipelineMap.find(sourceId);
         if (siIt != m_pipelineMap.end()) {
-            Source sourceInfo = siIt->second;
+            Source sourceInfo = siIt->value;
             doRemoveSink = sourceInfo.m_removeWhenNotUsed;
         }
     }
@@ -506,13 +506,13 @@ void CentralPipelineUnit::removeSourceFactoryForSource(GstElement* source)
         if (sidIt == m_sourceIdLookupMap.end())
             continue;
 
-        String sourceId = sidIt->second;
+        String sourceId = sidIt->value;
 
         PipelineMap::iterator siIt = m_pipelineMap.find(sourceId);
         if (siIt == m_pipelineMap.end())
             continue;
 
-        Source& sourceInfo = siIt->second;
+        Source& sourceInfo = siIt->value;
         sourceInfo.m_sourceFactory = 0;
         gst_object_unref(srcpad);
         break;
@@ -537,13 +537,13 @@ void CentralPipelineUnit::removeSourceFactoryForSource(GstElement* source)
     if (sidIt == m_sourceIdLookupMap.end())
         return;
 
-    String sourceId = sidIt->second;
+    String sourceId = sidIt->value;
 
     PipelineMap::iterator siIt = m_pipelineMap.find(sourceId);
     if (siIt == m_pipelineMap.end())
         return;
 
-    Source& sourceInfo = siIt->second;
+    Source& sourceInfo = siIt->value;
     sourceInfo.m_sourceFactory = 0;
 }
 
@@ -553,13 +553,13 @@ void CentralPipelineUnit::disconnectSourceFromPipeline(GstElement* source, GstPa
     if (sidIt == m_sourceIdLookupMap.end())
         return;
 
-    String sourceId = sidIt->second;
+    String sourceId = sidIt->value;
 
     PipelineMap::iterator siIt = m_pipelineMap.find(sourceId);
     if (siIt == m_pipelineMap.end())
         return;
 
-    Source sourceInfo = siIt->second;
+    Source sourceInfo = siIt->value;
 
     // FIXME: do block properly async
     gst_pad_set_blocked_async(sourcePad, TRUE, 0, 0);
@@ -661,7 +661,7 @@ void CentralPipelineUnit::disconnectSourceWithMultiplePadsFromPipeline(GstElemen
     if (sidIt == m_sourceIdLookupMap.end())
         return;
 
-    String sourceId = sidIt->second;
+    String sourceId = sidIt->value;
 
     gpointer item;
     GstIterator* padsIt = gst_element_iterate_src_pads(source);
