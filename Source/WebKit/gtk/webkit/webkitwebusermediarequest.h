@@ -61,10 +61,10 @@ WEBKIT_API WebKitSecurityOrigin *
 webkit_web_user_media_request_get_security_origin      (WebKitWebUserMediaRequest *request);
 
 WEBKIT_API void
-webkit_web_user_media_request_fail                     (WebKitWebUserMediaRequest *request);
+webkit_web_user_media_request_deny                     (WebKitWebUserMediaRequest *webRequest);
 
 WEBKIT_API void
-webkit_web_user_media_request_succeed                  (WebKitWebUserMediaRequest *webRequest,
+webkit_web_user_media_request_allow                    (WebKitWebUserMediaRequest *webRequest,
                                                         WebKitWebUserMediaList* audioMediaList,
                                                         WebKitWebUserMediaList* videoMediaList);
 

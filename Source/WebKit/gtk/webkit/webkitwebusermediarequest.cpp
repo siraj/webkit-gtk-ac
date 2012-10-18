@@ -128,7 +128,7 @@ WebKitSecurityOrigin* webkit_web_user_media_request_get_security_origin(WebKitWe
 }
 
 /**
- * webkit_web_user_media_request_succeed:
+ * webkit_web_user_media_request_allow:
  * @webRequest: a #WebKitWebUserMediaRequest
  * @audioMediaList: a #WebKitWebUserMediaList containing audio devices
  * @videoMediaList: a #WebKitWebUserMediaList containing video devices
@@ -138,7 +138,7 @@ WebKitSecurityOrigin* webkit_web_user_media_request_get_security_origin(WebKitWe
  *
  * Since: 2.0
  **/
-void webkit_web_user_media_request_succeed(WebKitWebUserMediaRequest* webRequest, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
+void webkit_web_user_media_request_allow(WebKitWebUserMediaRequest* webRequest, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
 {
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_LIST(audioMediaList));
@@ -160,14 +160,14 @@ void webkit_web_user_media_request_succeed(WebKitWebUserMediaRequest* webRequest
 }
 
 /**
- * webkit_web_view_reject_user_media_request:
+ * webkit_web_user_media_request_deny:
  * @webRequest: a #WebKitWebUserMediaRequest
  *
  * This method should be called by the application when the user rejected a userMedia request.
  *
  * Since: 2.0
  **/
-void webkit_web_user_media_request_fail(WebKitWebUserMediaRequest* webRequest)
+void webkit_web_user_media_request_deny(WebKitWebUserMediaRequest* webRequest)
 {
     g_return_if_fail(WEBKIT_IS_WEB_USER_MEDIA_REQUEST(webRequest));
     core(webRequest)->fail();

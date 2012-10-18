@@ -1198,9 +1198,9 @@ static void mediaChooserResponseCallback(GtkWidget* widget, gint responseID, Use
         if (data->dialog->selectedVideo() != -1)
             webkit_web_user_media_list_select_item(data->videoMediaList, data->dialog->selectedVideo());
 
-        webkit_web_user_media_request_succeed(data->request, data->audioMediaList, data->videoMediaList);
+        webkit_web_user_media_request_allow(data->request, data->audioMediaList, data->videoMediaList);
     } else
-        webkit_web_user_media_request_fail(data->request);
+        webkit_web_user_media_request_deny(data->request);
 
     g_object_unref(data->request);
     g_object_unref(data->audioMediaList);
