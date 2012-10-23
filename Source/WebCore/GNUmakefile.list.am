@@ -6012,7 +6012,6 @@ webcoregtk_sources += \
 	Source/WebCore/platform/gtk/WidgetGtk.cpp \
 	Source/WebCore/platform/gtk/WidgetRenderingContext.cpp \
 	Source/WebCore/platform/gtk/WidgetRenderingContext.h \
-	Source/WebCore/platform/gtk/WidgetRenderingContext.h \
 	Source/WebCore/platform/mediastream/gstreamer/CentralPipelineUnit.h \
 	Source/WebCore/platform/mediastream/gstreamer/CentralPipelineUnit.cpp \
 	Source/WebCore/platform/mediastream/gstreamer/MediaStreamCenterGStreamer.cpp \
