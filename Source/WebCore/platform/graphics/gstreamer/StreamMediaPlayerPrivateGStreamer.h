@@ -23,14 +23,7 @@
 
 #include "MediaPlayerPrivate.h"
 #include "MediaStream.h"
-#include "TimeRanges.h"
-#include "Timer.h"
-
-
-#include <glib.h>
 #include <gst/gst.h>
-#include <wtf/Forward.h>
-#include <wtf/Vector.h>
 
 typedef struct _WebKitVideoSink WebKitVideoSink;
 

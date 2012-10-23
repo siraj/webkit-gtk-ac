@@ -26,21 +26,12 @@
 #include "CentralPipelineUnit.h"
 #include "GStreamerGWorld.h"
 #include "GraphicsContext.h"
-#include "GraphicsTypes.h"
 #include "ImageGStreamer.h"
-#include "IntRect.h"
 #include "KURL.h"
 #include "Logging.h"
 #include "MediaPlayer.h"
-#include "MediaStream.h"
 #include "MediaStreamRegistry.h"
 #include "VideoSinkGStreamer.h"
-#include "WebKitWebSourceGStreamer.h"
-
-#include <gst/gst.h>
-#include <gst/video/video.h>
-#include <math.h>
-#include <wtf/gobject/GOwnPtr.h>
 #include <wtf/text/CString.h>
 
 
