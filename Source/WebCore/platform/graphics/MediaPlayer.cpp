@@ -234,7 +234,6 @@ static Vector<MediaPlayerFactory*>& installedMediaEngines()
     return installedEngines;
 }
 
-
 static void addMediaEngine(CreateMediaEnginePlayer constructor, MediaEngineSupportedTypes getSupportedTypes, MediaEngineSupportsType supportsType,
     MediaEngineGetSitesInMediaCache getSitesInMediaCache, MediaEngineClearMediaCache clearMediaCache, MediaEngineClearMediaCacheForSite clearMediaCacheForSite)
 {
