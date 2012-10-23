@@ -24,10 +24,8 @@
 
 #include "CentralPipelineUnit.h"
 #include "Logging.h"
-#include "MediaStreamCenter.h"
 #include "MediaStreamDescriptor.h"
 #include "MediaStreamSourcesQueryClient.h"
-#include <gio/gio.h>
 #include <gst/gst.h>
 #include <gst/interfaces/propertyprobe.h>
 #include <wtf/text/CString.h>
@@ -64,15 +62,6 @@ void MediaStreamCenterPrivateGStreamer::queryMediaStreamSources(PassRefPtr<Media
             probeSource(audioSrc, key, MediaStreamSource::TypeAudio, audioSources);
             gst_object_unref(audioSrc);
         }
-
-#if 0
-        GstElement* audioTestSrc = gst_element_factory_make("audiotestsrc", NULL);
-        if (audioTestSrc) {
-            String key = storeElementFactoryForElement(audioTestSrc);
-            audioSources.append(MediaStreamSource::create(key + ";testsrc_audio", MediaStreamSource::TypeAudio, "audioTestSrc"));
-            gst_object_unref(audioTestSrc);
-        }
-#endif
     }
 
     if (client->video()) {
@@ -82,15 +71,6 @@ void MediaStreamCenterPrivateGStreamer::queryMediaStreamSources(PassRefPtr<Media
             probeSource(videoSrc, key, MediaStreamSource::TypeVideo, videoSources);
             gst_object_unref(videoSrc);
         }
-
-#if 0
-        GstElement* videoTestSrc = gst_element_factory_make("videotestsrc", NULL);
-        if (videoTestSrc) {
-            String key = storeElementFactoryForElement(videoTestSrc);
-            videoSources.append(MediaStreamSource::create(key + ";testsrc_video", MediaStreamSource::TypeVideo, "videoTestSrc"));
-            gst_object_unref(videoTestSrc);
-        }
-#endif
     }
 
     registerSourceFactories(audioSources);
@@ -101,7 +81,6 @@ void MediaStreamCenterPrivateGStreamer::queryMediaStreamSources(PassRefPtr<Media
 
 void MediaStreamCenterPrivateGStreamer::didSetMediaStreamTrackEnabled(MediaStreamDescriptor* streamDescriptor, MediaStreamComponent* component)
 {
-    // FIXME
     LOG(Media, "enabled: %d", component->enabled());
 }
 

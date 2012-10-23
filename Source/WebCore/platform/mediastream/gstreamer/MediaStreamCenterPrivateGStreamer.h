@@ -27,10 +27,8 @@
 
 #include <gst/gst.h>
 #include <wtf/HashMap.h>
-#include <wtf/PassOwnPtr.h>
 #include <wtf/gobject/GOwnPtr.h>
 #include <wtf/gobject/GRefPtr.h>
-#include <wtf/text/StringHash.h>
 #include <wtf/text/WTFString.h>
 
 
