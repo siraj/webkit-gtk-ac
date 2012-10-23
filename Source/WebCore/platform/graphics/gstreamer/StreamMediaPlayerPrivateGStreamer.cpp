@@ -105,7 +105,7 @@ StreamMediaPlayerPrivateGStreamer::StreamMediaPlayerPrivateGStreamer(MediaPlayer
     , m_muteTimerHandler(0)
     , m_repaintCallbackHandlerId(0)
 {
-    LOG(MediaStream, "SreamMediaPlayer - Creating Stream media player");
+    LOG(Media, "SreamMediaPlayer - Creating Stream media player");
 
     if (doGstInit()) {
         createGSTVideoSinkBin();
@@ -115,7 +115,7 @@ StreamMediaPlayerPrivateGStreamer::StreamMediaPlayerPrivateGStreamer(MediaPlayer
 
 StreamMediaPlayerPrivateGStreamer::~StreamMediaPlayerPrivateGStreamer()
 {
-    LOG(MediaStream, "StreamMediaPlayerPrivateGStreamer destructor called.");
+    LOG(Media, "StreamMediaPlayerPrivateGStreamer destructor called.");
 
     g_signal_handler_disconnect(m_webkitVideoSink, m_repaintCallbackHandlerId);
 
@@ -159,7 +159,7 @@ StreamMediaPlayerPrivateGStreamer::~StreamMediaPlayerPrivateGStreamer()
 
 void StreamMediaPlayerPrivateGStreamer::play()
 {
-    LOG(MediaStream, "StreamMediaPlayerPrivateGStreamer::play() called.");
+    LOG(Media, "StreamMediaPlayerPrivateGStreamer::play() called.");
 
     if (!m_streamDescriptor || m_streamDescriptor->ended()) {
         m_readyState = MediaPlayer::HaveNothing;
@@ -173,7 +173,7 @@ void StreamMediaPlayerPrivateGStreamer::play()
 
 void StreamMediaPlayerPrivateGStreamer::pause()
 {
-    LOG(MediaStream, "StreamMediaPlayerPrivateGStreamer::pause() called.");
+    LOG(Media, "StreamMediaPlayerPrivateGStreamer::pause() called.");
     m_paused = true;
     stop();
 }
@@ -250,7 +250,7 @@ void StreamMediaPlayerPrivateGStreamer::muteChanged()
 
 void StreamMediaPlayerPrivateGStreamer::load(const String &url)
 {
-    LOG(MediaStream, "StreamAPI - Stream media player - load %s", url.utf8().data());
+    LOG(Media, "StreamAPI - Stream media player - load %s", url.utf8().data());
 
     m_streamDescriptor = MediaStreamRegistry::registry().lookupMediaStreamDescriptor(url);
     if (!m_streamDescriptor || m_streamDescriptor->ended()) {
@@ -315,11 +315,11 @@ void StreamMediaPlayerPrivateGStreamer::stop()
         m_stopped = true;
         CentralPipelineUnit& cpu = centralPipelineUnit();
         if (!m_audioSourceId.isEmpty()) {
-            LOG(MediaStream, "StreamMediaPlayerPrivateGStreamer stop: disconnecting audio");
+            LOG(Media, "StreamMediaPlayerPrivateGStreamer stop: disconnecting audio");
             cpu.disconnectFromSource(m_audioSourceId, m_audioSinkBin);
         }
         if (!m_videoSourceId.isEmpty()) {
-            LOG(MediaStream, "StreamMediaPlayerPrivateGStreamer stop: disconnecting video");
+            LOG(Media, "StreamMediaPlayerPrivateGStreamer stop: disconnecting video");
             cpu.disconnectFromSource(m_videoSourceId, m_videoSinkBin);
         }
         m_audioSourceId = "";
@@ -446,13 +446,13 @@ PlatformMedia StreamMediaPlayerPrivateGStreamer::platformMedia() const
 
 void StreamMediaPlayerPrivateGStreamer::createGSTVideoSinkBin()
 {
-    LOG(MediaStream, "createGSTVideoSinkBin called");
+    LOG(Media, "createGSTVideoSinkBin called");
     GstElement* pipeline = centralPipelineUnit().pipeline();
     m_gstGWorld = GStreamerGWorld::createGWorld(pipeline);
     m_webkitVideoSink = webkitVideoSinkNew(m_gstGWorld.get());
 
     gchar* name = gst_element_get_name(m_webkitVideoSink);
-    LOG(MediaStream, "m_webkitVideoSink=%p name=%s", m_webkitVideoSink, name);
+    LOG(Media, "m_webkitVideoSink=%p name=%s", m_webkitVideoSink, name);
 
     m_repaintCallbackHandlerId = g_signal_connect(m_webkitVideoSink, "repaint-requested", G_CALLBACK(mediaPlayerPrivateRepaintCallback), this);
 
@@ -515,7 +515,7 @@ void StreamMediaPlayerPrivateGStreamer::createGSTAudioSinkBin()
 
 void StreamMediaPlayerPrivateGStreamer::sourceChangedState()
 {
-    LOG(MediaStream, "sourceChangedState");
+    LOG(Media, "sourceChangedState");
 
     CentralPipelineUnit& cpu = centralPipelineUnit();
     if (!m_streamDescriptor || m_streamDescriptor->ended())
@@ -548,7 +548,7 @@ void StreamMediaPlayerPrivateGStreamer::sourceChangedState()
 
 bool StreamMediaPlayerPrivateGStreamer::connectToGSTLiveStream(MediaStreamDescriptor* streamDescriptor)
 {
-    LOG(MediaStream, "connectToGSTLiveStream called");
+    LOG(Media, "connectToGSTLiveStream called");
     if (!streamDescriptor)
         return false;
 

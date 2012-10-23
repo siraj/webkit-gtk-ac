@@ -46,7 +46,7 @@ gboolean timerDebugDot(gpointer data)
     gchar* binName = gst_element_get_name(bin);
     pid_t pid = getpid();
     gchar* dotName = g_strdup_printf("%u.%u.%s", pid, i++, binName);
-    LOG(MediaStream, "Maybe writing dotfile %s", dotName);
+    LOG(Media, "Maybe writing dotfile %s", dotName);
     GST_DEBUG_BIN_TO_DOT_FILE(bin, static_cast<GstDebugGraphDetails>(GST_DEBUG_GRAPH_SHOW_MEDIA_TYPE | GST_DEBUG_GRAPH_SHOW_NON_DEFAULT_PARAMS | GST_DEBUG_GRAPH_SHOW_STATES), dotName);
     g_free(dotName);
     g_free(binName);
@@ -100,12 +100,12 @@ void CentralPipelineUnit::deregisterSourceFactory(const String& sourceId)
 
 bool CentralPipelineUnit::connectAndGetSourceElement(const String& sourceId, GstElement** sourceElement, GstPad** sourcePad)
 {
-    LOG(MediaStream, "Connecting to source element %s", sourceId.ascii().data());
+    LOG(Media, "Connecting to source element %s", sourceId.ascii().data());
 
     CentralPipelineUnit::PipelineMap::iterator sourceIt = m_pipelineMap.find(sourceId);
     if (sourceIt != m_pipelineMap.end()) {
         Source& source = sourceIt->value;
-        LOG(MediaStream, "Source element %s already in pipeline, using it.", sourceId.ascii().data());
+        LOG(Media, "Source element %s already in pipeline, using it.", sourceId.ascii().data());
         *sourceElement = source.m_sourceElement.get();
         *sourcePad = source.m_sourcePad.get();
         return true;
@@ -113,23 +113,23 @@ bool CentralPipelineUnit::connectAndGetSourceElement(const String& sourceId, Gst
 
     CentralPipelineUnit::SourceFactoryMap::iterator sourceFactoryIt = m_sourceFactoryMap.find(sourceId);
     if (sourceFactoryIt != m_sourceFactoryMap.end()) {
-        LOG(MediaStream, "Found a SourceFactory. Creating source element %s", sourceId.ascii().data());
+        LOG(Media, "Found a SourceFactory. Creating source element %s", sourceId.ascii().data());
         SourceFactory* sourceFactory = sourceFactoryIt->value;
         *sourceElement = sourceFactory->createSource(sourceId, sourcePad);
         if (!*sourceElement) {
-            LOG(MediaStream, "ERROR, unable to create source element");
+            LOG(Media, "ERROR, unable to create source element");
             *sourceElement = 0;
             *sourcePad = 0;
             return false;
         }
 
         if (!*sourcePad) {
-            LOG(MediaStream, "SourceFactory could not create a source pad, trying the element static \"src\" pad");
+            LOG(Media, "SourceFactory could not create a source pad, trying the element static \"src\" pad");
             *sourcePad = gst_element_get_static_pad(*sourceElement, "src");
         }
 
         if (!*sourcePad) {
-            LOG(MediaStream, "ERROR, unable to retrieve element source pad");
+            LOG(Media, "ERROR, unable to retrieve element source pad");
             gst_object_unref(*sourceElement);
             *sourceElement = 0;
             return false;
@@ -137,7 +137,7 @@ bool CentralPipelineUnit::connectAndGetSourceElement(const String& sourceId, Gst
 
         GstElement* tee = gst_element_factory_make("tee", NULL);
         if (!tee) {
-            LOG(MediaStream, "ERROR, Got no tee element");
+            LOG(Media, "ERROR, Got no tee element");
             gst_object_unref(*sourceElement);
             gst_object_unref(*sourcePad);
             *sourceElement = 0;
@@ -158,18 +158,18 @@ bool CentralPipelineUnit::connectAndGetSourceElement(const String& sourceId, Gst
 
 bool CentralPipelineUnit::connectToSource(const String& sourceId, GstElement* sink, GstPad* sinkpad)
 {
-    LOG(MediaStream, "Connecting to source with id=%s, sink=%p, sinkpad=%p", sourceId.ascii().data(), sink, sinkpad);
+    LOG(Media, "Connecting to source with id=%s, sink=%p, sinkpad=%p", sourceId.ascii().data(), sink, sinkpad);
 
     if (!sink || sourceId.isEmpty()) {
-        LOG(MediaStream, "ERROR, No sink provided or empty source id");
+        LOG(Media, "ERROR, No sink provided or empty source id");
         return false;
     }
 
     if (!sinkpad) {
-        LOG(MediaStream, "No pad was given as argument, trying the element static \"sink\" pad.");
+        LOG(Media, "No pad was given as argument, trying the element static \"sink\" pad.");
         sinkpad = gst_element_get_static_pad(sink, "sink");
         if (!sinkpad) {
-            LOG(MediaStream, "ERROR, Unable to retrieve element sink pad");
+            LOG(Media, "ERROR, Unable to retrieve element sink pad");
             return false;
         }
     }
@@ -179,25 +179,25 @@ bool CentralPipelineUnit::connectToSource(const String& sourceId, GstElement* si
 
     bool haveSources = connectAndGetSourceElement(sourceId, &sourceElement, &sourcePad);
     if (!sourceElement) {
-        LOG(MediaStream, "ERROR, Unable to get source element");
+        LOG(Media, "ERROR, Unable to get source element");
         return false;
     }
 
     GstElement* queue = gst_element_factory_make("queue", NULL);
     if (!queue) {
-        LOG(MediaStream, "ERROR, Got no queue element");
+        LOG(Media, "ERROR, Got no queue element");
         return false;
     }
 
     GstElement* sinkParent = GST_ELEMENT(gst_element_get_parent(sink));
     if (!sinkParent) {
-        LOG(MediaStream, "Sink not in pipeline, adding.");
+        LOG(Media, "Sink not in pipeline, adding.");
         gst_bin_add(GST_BIN(m_pipeline), sink);
     } else {
         if (sinkParent != m_pipeline) {
             gst_object_unref(queue);
             gst_object_unref(sinkParent);
-            LOG(MediaStream, "ERROR, Sink already added to another element. Pipeline is now broken!");
+            LOG(Media, "ERROR, Sink already added to another element. Pipeline is now broken!");
             return false;
         }
         gst_object_unref(sinkParent);
@@ -234,24 +234,24 @@ bool CentralPipelineUnit::connectToSource(const String& sourceId, GstElement* si
 
 bool CentralPipelineUnit::disconnectFromSource(const String& sourceId, GstElement* sink, GstPad* sinkpad)
 {
-    LOG(MediaStream, "Disconnecting from source with id=%s, sink=%p, sinkpad=%p", sourceId.ascii().data(), sink, sinkpad);
+    LOG(Media, "Disconnecting from source with id=%s, sink=%p, sinkpad=%p", sourceId.ascii().data(), sink, sinkpad);
 
     if (!sink || sourceId.isEmpty()) {
-        LOG(MediaStream, "ERROR, No sink provided or empty source id");
+        LOG(Media, "ERROR, No sink provided or empty source id");
         return false;
     }
 
     PipelineMap::iterator sourceIt = m_pipelineMap.find(sourceId);
     if (sourceIt == m_pipelineMap.end()) {
-        LOG(MediaStream, "Could not find source with id=%s", sourceId.ascii().data());
+        LOG(Media, "Could not find source with id=%s", sourceId.ascii().data());
         return false;
     }
 
     if (!sinkpad) {
-        LOG(MediaStream, "No pad was given as argument, trying the element static \"sink\" pad.");
+        LOG(Media, "No pad was given as argument, trying the element static \"sink\" pad.");
         sinkpad = gst_element_get_static_pad(sink, "sink");
         if (!sinkpad) {
-            LOG(MediaStream, "ERROR, Unable to retrieve element sink pad");
+            LOG(Media, "ERROR, Unable to retrieve element sink pad");
             return false;
         }
     }
@@ -304,7 +304,7 @@ guint CentralPipelineUnit::disconnectSinkFromPipeline(GstElement* sink)
 
     gst_element_release_request_pad(tee, teeSrcPad);
     gst_object_unref(teeSrcPad);
-    LOG(MediaStream, "removing stuff done");
+    LOG(Media, "removing stuff done");
 
     guint srcpads = -1;
     g_object_get(tee, "num-src-pads", &srcpads, NULL);
@@ -330,7 +330,7 @@ void CentralPipelineUnit::removeSourceExtensionFromBehind(GstElement* sourceExte
     // Get left hand side elements
     GstPad* seSinkPad = gst_element_get_static_pad(sourceExtension, "sink");
     if (!seSinkPad) {
-        LOG(MediaStream, "source extension did not have any sink pads. Assuming it's a source. Check if we should remove it.");
+        LOG(Media, "source extension did not have any sink pads. Assuming it's a source. Check if we should remove it.");
 
         // Need to iterate or something..
         SourceIdLookupMap::iterator sidIt = m_sourceIdLookupMap.find(generateElementPadId(sourceExtension, seSrcPad));
@@ -342,7 +342,7 @@ void CentralPipelineUnit::removeSourceExtensionFromBehind(GstElement* sourceExte
                 Source sourceInfo = siIt->value;
 
                 if (sourceInfo.m_removeWhenNotUsed) {
-                    LOG(MediaStream, "Removing source %p with id=%s", sourceExtension, sourceId.ascii().data());
+                    LOG(Media, "Removing source %p with id=%s", sourceExtension, sourceId.ascii().data());
                     gst_element_set_state(sourceExtension, GST_STATE_NULL);
                     gst_element_set_state(rTee, GST_STATE_NULL);
                     gst_bin_remove(GST_BIN(m_pipeline), sourceExtension);
@@ -384,9 +384,9 @@ void CentralPipelineUnit::removeSourceExtensionFromBehind(GstElement* sourceExte
     gst_object_unref(rTee);
 
     guint numSourceTeePads = disconnectSinkFromTee(lTee, sourceExtension, 0);
-    LOG(MediaStream, "source-tee source pads: %d", numSourceTeePads);
+    LOG(Media, "source-tee source pads: %d", numSourceTeePads);
     if (!numSourceTeePads) {
-        LOG(MediaStream, "source-tee of source extension did not have any source pads. See if we should remove it.");
+        LOG(Media, "source-tee of source extension did not have any source pads. See if we should remove it.");
         SourceIdLookupMap::iterator sidIt = m_sourceIdLookupMap.find(generateElementPadId(sourceElement, sourceSrcPad));
         String sourceId = sidIt->value;
         PipelineMap::iterator siIt = m_pipelineMap.find(sourceId);
@@ -399,7 +399,7 @@ void CentralPipelineUnit::removeSourceExtensionFromBehind(GstElement* sourceExte
     SourceIdLookupMap::iterator sidIt = m_sourceIdLookupMap.find(sourceExtensionAndPadId);
     if (sidIt != m_sourceIdLookupMap.end()) {
         String sourceId = sidIt->value;
-        LOG(MediaStream, "Removing sourceExtension with id %s", sourceId.ascii().data());
+        LOG(Media, "Removing sourceExtension with id %s", sourceId.ascii().data());
         m_pipelineMap.remove(sourceId);
         m_sourceIdLookupMap.remove(sourceExtensionAndPadId);
     }
@@ -452,7 +452,7 @@ gint CentralPipelineUnit::disconnectSinkFromTee(GstElement* tee, GstElement* sin
             done = true;
             break;
         case GST_ITERATOR_ERROR:
-            LOG(MediaStream, "ERROR, Iterating!");
+            LOG(Media, "ERROR, Iterating!");
             done = true;
             break;
         default:
@@ -474,9 +474,9 @@ gint CentralPipelineUnit::disconnectSinkFromTee(GstElement* tee, GstElement* sin
     if (doRemoveSink) {
         gst_element_set_state(sink, GST_STATE_NULL);
         gst_bin_remove(GST_BIN(m_pipeline), sink);
-        LOG(MediaStream, "Sink removed");
+        LOG(Media, "Sink removed");
     } else
-        LOG(MediaStream, "Did not remove the sink");
+        LOG(Media, "Did not remove the sink");
 
     gst_iterator_free(padsIt);
 
@@ -524,7 +524,7 @@ void CentralPipelineUnit::removeSourceFactoryForSource(GstElement* source)
         done = true;
         break;
     case GST_ITERATOR_ERROR:
-        LOG(MediaStream, "ERROR, Iterating!");
+        LOG(Media, "ERROR, Iterating!");
         done = true;
         break;
     default:
@@ -606,7 +606,7 @@ void CentralPipelineUnit::disconnectSourceFromPipeline(GstElement* source, GstPa
             SourceIdLookupMap::iterator sidIt = m_sourceIdLookupMap.find(generateElementPadId(sinkBin, sinkSrcPad));
             gst_object_unref(sinkSrcPad);
             if (sidIt != m_sourceIdLookupMap.end()) {
-                LOG(MediaStream, "Sink element was a source extension. Recursively calling disconnectSourceFromPipeline to remove it");
+                LOG(Media, "Sink element was a source extension. Recursively calling disconnectSourceFromPipeline to remove it");
                 GstPad* srcpad = gst_element_get_static_pad(sinkBin, "src");
                 disconnectSourceFromPipeline(sinkBin, srcpad);
             } else
@@ -629,7 +629,7 @@ void CentralPipelineUnit::disconnectSourceFromPipeline(GstElement* source, GstPa
             done = true;
             break;
         case GST_ITERATOR_ERROR:
-            LOG(MediaStream, "ERROR, Iterating!");
+            LOG(Media, "ERROR, Iterating!");
             done = true;
             break;
         default:
@@ -694,7 +694,7 @@ void CentralPipelineUnit::disconnectSourceWithMultiplePadsFromPipeline(GstElemen
         done = true;
         break;
     case GST_ITERATOR_ERROR:
-        LOG(MediaStream, "ERROR, Iterating!");
+        LOG(Media, "ERROR, Iterating!");
         done = true;
         break;
     default:
@@ -717,7 +717,7 @@ static gboolean messageCallback(GstBus* bus, GstMessage* message, gpointer data)
     switch (GST_MESSAGE_TYPE(message)) {
     case GST_MESSAGE_ERROR: {
         gst_message_parse_error(message, &err, &debug);
-        LOG(MediaStream, "ERROR, media error: %d, %s", err->code, err->message);
+        LOG(Media, "ERROR, media error: %d, %s", err->code, err->message);
         GstElement* source = (GstElement*) GST_MESSAGE_SRC(message);
         GstElement* parent = (GstElement*) gst_element_get_parent(source);
 
@@ -738,7 +738,7 @@ static gboolean messageCallback(GstBus* bus, GstMessage* message, gpointer data)
         */
 
         // FIXME: Do this on all errors? Check error code?
-        // LOG(MediaStream, "Trying to disconnect source from pipeline...");
+        // LOG(Media, "Trying to disconnect source from pipeline...");
         // disconnectSourceFromPipeline(pipeline, source);
 
         gst_object_unref(parent);

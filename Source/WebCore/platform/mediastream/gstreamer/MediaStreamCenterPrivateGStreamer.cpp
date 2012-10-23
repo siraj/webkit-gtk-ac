@@ -102,12 +102,12 @@ void MediaStreamCenterPrivateGStreamer::queryMediaStreamSources(PassRefPtr<Media
 void MediaStreamCenterPrivateGStreamer::didSetMediaStreamTrackEnabled(MediaStreamDescriptor* streamDescriptor, MediaStreamComponent* component)
 {
     // FIXME
-    LOG(MediaStream, "enabled: %d", component->enabled());
+    LOG(Media, "enabled: %d", component->enabled());
 }
 
 void MediaStreamCenterPrivateGStreamer::didStopLocalMediaStream(MediaStreamDescriptor* streamDescriptor)
 {
-    LOG(MediaStream, "didStopLocalMediaStream %s", streamDescriptor->label().utf8().data());
+    LOG(Media, "didStopLocalMediaStream %s", streamDescriptor->label().utf8().data());
 
     for (unsigned i = 0; i < streamDescriptor->numberOfVideoComponents(); i++) {
         MediaStreamComponent *component = streamDescriptor->videoComponent(i);
@@ -136,7 +136,7 @@ void MediaStreamCenterPrivateGStreamer::registerSourceFactories(const MediaStrea
         String factoryString = getFactoryNameFromDeviceIdString(id);
 
         String sourceId = storeSourceInfo(sources[i]->type(), factoryString, deviceString);
-        LOG(MediaStream, "Registering source factory for source with id=%s", sourceId.ascii().data());
+        LOG(Media, "Registering source factory for source with id=%s", sourceId.ascii().data());
         cpu.registerSourceFactory(this, sourceId);
     }
 }
@@ -182,7 +182,7 @@ String MediaStreamCenterPrivateGStreamer::storeSourceInfo(MediaStreamSource::Typ
 
 GstElement* MediaStreamCenterPrivateGStreamer::createSource(const String& sourceId, GstPad** srcPad)
 {
-    LOG(MediaStream, "Creating source with id=%s", sourceId.ascii().data());
+    LOG(Media, "Creating source with id=%s", sourceId.ascii().data());
 
     SourceInfoMap::iterator sourceInfoIt = m_sourceInfoMap.find(sourceId);
     if (sourceInfoIt == m_sourceInfoMap.end())
@@ -198,7 +198,7 @@ GstElement* MediaStreamCenterPrivateGStreamer::createSource(const String& source
     if (!source)
         return 0;
 
-    LOG(MediaStream, "sourceInfo.m_device=%s", sourceInfo.m_device.ascii().data());
+    LOG(Media, "sourceInfo.m_device=%s", sourceInfo.m_device.ascii().data());
     // do not set device for test sources
     if (sourceInfo.m_device != "testsrc_audio"
         && sourceInfo.m_device != "testsrc_video")
@@ -334,13 +334,13 @@ static GstElement* createAudioSourceBin(GstElement* source)
 {
     GstElement* audioconvert = gst_element_factory_make("audioconvert", "audioconvert");
     if (!audioconvert) {
-        LOG(MediaStream, "ERROR, Got no audioconvert element for audio source pipeline");
+        LOG(Media, "ERROR, Got no audioconvert element for audio source pipeline");
         return 0;
     }
 
     GstCaps* audiocaps = gst_caps_new_simple("audio/x-raw-int", "channels", G_TYPE_INT, 1, NULL);
     if (!audiocaps) {
-        LOG(MediaStream, "ERROR, Unable to create filter caps for audio source pipeline");
+        LOG(Media, "ERROR, Unable to create filter caps for audio source pipeline");
         gst_object_unref(audioconvert);
         return 0;
     }
@@ -352,7 +352,7 @@ static GstElement* createAudioSourceBin(GstElement* source)
     gst_bin_add_many(GST_BIN(audioSourceBin), source, audioconvert, NULL);
 
     if (!gst_element_link_filtered(source, audioconvert, audiocaps)) {
-        LOG(MediaStream, "ERROR, Cannot link audio source elements");
+        LOG(Media, "ERROR, Cannot link audio source elements");
         gst_caps_unref(audiocaps);
         gst_object_unref(audioSourceBin);
         return 0;
@@ -369,19 +369,19 @@ static GstElement* createVideoSourceBin(GstElement *source)
 {
     GstElement* colorspace = gst_element_factory_make("ffmpegcolorspace", "colorspace");
     if (!colorspace) {
-        LOG(MediaStream, "ERROR, Got no ffmpegcolorspace element for video source pipeline");
+        LOG(Media, "ERROR, Got no ffmpegcolorspace element for video source pipeline");
         return 0;
     }
     GstElement* videoscale = gst_element_factory_make("videoscale", "videoscale");
     if (!videoscale) {
-        LOG(MediaStream, "ERROR, Got no videoscale element for video source pipeline");
+        LOG(Media, "ERROR, Got no videoscale element for video source pipeline");
         gst_object_unref(colorspace);
         return 0;
     }
 
     GstCaps* videocaps = gst_caps_new_simple("video/x-raw-yuv", "width", G_TYPE_INT, 320, "height", G_TYPE_INT, 240, NULL);
     if (!videocaps) {
-        LOG(MediaStream, "ERROR, Unable to create filter caps for video source pipeline");
+        LOG(Media, "ERROR, Unable to create filter caps for video source pipeline");
         gst_object_unref(colorspace);
         gst_object_unref(videoscale);
         return 0;
@@ -395,7 +395,7 @@ static GstElement* createVideoSourceBin(GstElement *source)
 
     if (!gst_element_link_many(source, videoscale, NULL)
         || !gst_element_link_filtered(videoscale, colorspace, videocaps)) {
-        LOG(MediaStream, "ERROR, Cannot link video source elements");
+        LOG(Media, "ERROR, Cannot link video source elements");
         gst_caps_unref(videocaps);
         gst_object_unref(videoSourceBin);
         return 0;
