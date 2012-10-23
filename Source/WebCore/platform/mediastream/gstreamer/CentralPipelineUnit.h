@@ -22,7 +22,6 @@
 
 #if ENABLE(MEDIA_STREAM)
 
-
 #include <gst/gst.h>
 #include <wtf/HashMap.h>
 #include <wtf/gobject/GRefPtr.h>
@@ -101,19 +100,6 @@ private:
     guint disconnectSinkFromPipeline(GstElement* sink);
     void removeSourceExtensionFromBehind(GstElement* sourceExtension);
 
-    /**
-     * disconnectSinkFromTee disconnects the given sink from the given tee. It has to be a queue
-     * only between the tee and the sink. When the sink has been disconnected from the tee, if there
-     * are no more connected sink-pads on the sink, it is removed from the pipeline.
-     * disconnectSinkFromTee does not do any block on the source, so if that is needed, it has to be
-     * done before calling. No pads on the sink are released. disconnectSinkFromTee is also used
-     * to remove source extensions after the tee has been removed after the source extension.
-     *
-     * @param tee the tee element
-     * @param sink the sink element
-     * @param pad the pad of the sink connected to the given tee
-     * @return the number of source tee still on the tee after disconnecting the sink
-     */
     gint disconnectSinkFromTee(GstElement* tee, GstElement* sink, GstPad*);
 
     void removeSourceFactoryForSource(GstElement* source);

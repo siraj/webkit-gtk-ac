@@ -25,10 +25,7 @@
 #include "Logging.h"
 #include "SourceFactory.h"
 
-#include <glib/gprintf.h>
-#include <stdlib.h>
 #include <wtf/MainThread.h>
-#include <wtf/StdLibExtras.h>
 #include <wtf/gobject/GOwnPtr.h>
 #include <wtf/text/CString.h>
 
@@ -37,23 +34,6 @@ namespace WebCore {
 
 static gboolean messageCallback(GstBus*, GstMessage*, gpointer data);
 static String generateElementPadId(GstElement*, GstPad*);
-
-#if 0
-gboolean timerDebugDot(gpointer data)
-{
-    GstBin* bin = reinterpret_cast<GstBin*>(data);
-    static guint i = 0;
-    gchar* binName = gst_element_get_name(bin);
-    pid_t pid = getpid();
-    gchar* dotName = g_strdup_printf("%u.%u.%s", pid, i++, binName);
-    LOG(Media, "Maybe writing dotfile %s", dotName);
-    GST_DEBUG_BIN_TO_DOT_FILE(bin, static_cast<GstDebugGraphDetails>(GST_DEBUG_GRAPH_SHOW_MEDIA_TYPE | GST_DEBUG_GRAPH_SHOW_NON_DEFAULT_PARAMS | GST_DEBUG_GRAPH_SHOW_STATES), dotName);
-    g_free(dotName);
-    g_free(binName);
-
-    return true;
-}
-#endif
 
 CentralPipelineUnit& centralPipelineUnit()
 {
@@ -78,10 +58,6 @@ CentralPipelineUnit::CentralPipelineUnit()
     } else
         gst_object_unref(m_pipeline);
     gst_element_set_state(m_pipeline, GST_STATE_PLAYING);
-
-#if 0
-    g_timeout_add_seconds(5, timerDebugDot, m_pipeline);
-#endif
 }
 
 CentralPipelineUnit::~CentralPipelineUnit()
@@ -720,26 +696,6 @@ static gboolean messageCallback(GstBus* bus, GstMessage* message, gpointer data)
         LOG(Media, "ERROR, media error: %d, %s", err->code, err->message);
         GstElement* source = (GstElement*) GST_MESSAGE_SRC(message);
         GstElement* parent = (GstElement*) gst_element_get_parent(source);
-
-        /* Error handling code that doesnt really work
-         * FIXME: Make this work..
-        gchar* pname = gst_element_get_name(parent);
-
-        if (strcmp(pname, "mediastream_pipeline") == 0) {
-            disconnectSourceFromPipeline(pipeline, source);
-            cpui->removeSourceFromPipelineMap(source); // todo: make this call a part of disconnectSourceFromPipeline
-        }
-        else {
-            disconnectSourceFromPipeline(pipeline, parent);
-            cpui->removeSourceFromPipelineMap(parent);
-        }
-        if (pname)
-            g_free(pname);
-        */
-
-        // FIXME: Do this on all errors? Check error code?
-        // LOG(Media, "Trying to disconnect source from pipeline...");
-        // disconnectSourceFromPipeline(pipeline, source);
 
         gst_object_unref(parent);
         break;
