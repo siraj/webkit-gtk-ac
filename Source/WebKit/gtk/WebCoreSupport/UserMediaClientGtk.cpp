@@ -22,15 +22,16 @@
 #include "UserMediaClientGtk.h"
 
 #if ENABLE(MEDIA_STREAM)
-#include "MediaStreamSource.h"
 #include "NotImplemented.h"
-#include "UserMediaRequest.h"
+#include "webkitwebusermedialistprivate.h"
+#include "webkitwebusermediarequestprivate.h"
 
 using namespace WebCore;
 
 namespace WebKit {
 
-UserMediaClientGtk::UserMediaClientGtk()
+UserMediaClientGtk::UserMediaClientGtk(WebKitWebView* webView)
+    : m_webView(webView)
 {
 }
 
@@ -40,12 +41,12 @@ UserMediaClientGtk::~UserMediaClientGtk()
 
 void UserMediaClientGtk::pageDestroyed()
 {
-    notImplemented();
 }
 
 void UserMediaClientGtk::requestUserMedia(WTF::PassRefPtr<UserMediaRequest> prpRequest, const MediaStreamSourceVector& audioSource, const MediaStreamSourceVector& videoSource)
 {
-    notImplemented();
+    RefPtr<UserMediaRequest> request = prpRequest;
+    g_signal_emit_by_name(m_webView, "choose-media-device", kitNew(request.get()), kitNew(audioSource), kitNew(videoSource));
 }
 
 void UserMediaClientGtk::cancelUserMediaRequest(UserMediaRequest* request)

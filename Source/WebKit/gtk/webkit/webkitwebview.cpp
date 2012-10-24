@@ -63,6 +63,7 @@
 #include "GeolocationClientGtk.h"
 #include "GeolocationController.h"
 #include "GraphicsContext.h"
+#include "GtkMediaChooserDialog.h"
 #include "GtkUtilities.h"
 #include "GtkVersioning.h"
 #include "HTMLNames.h"
@@ -83,6 +84,7 @@
 #include "RuntimeEnabledFeatures.h"
 #include "ScriptValue.h"
 #include "Settings.h"
+#include "UserMediaClientGtk.h"
 #include "webkit/WebKitDOMDocumentPrivate.h"
 #include "webkitdownload.h"
 #include "webkitdownloadprivate.h"
@@ -107,6 +109,8 @@
 #include "webkitwebresource.h"
 #include "webkitwebsettingsprivate.h"
 #include "webkitwebplugindatabaseprivate.h"
+#include "webkitwebusermedialistprivate.h"
+#include "webkitwebusermediarequestprivate.h"
 #include "webkitwebwindowfeatures.h"
 #include "webkitwebviewprivate.h"
 #include <gdk/gdkkeysyms.h>
@@ -118,6 +122,7 @@
 #include "DeviceMotionClientGtk.h"
 #include "DeviceOrientationClientGtk.h"
 #endif
+
 
 /**
  * SECTION:webkitwebview
@@ -218,6 +223,7 @@ enum {
     LEAVING_FULLSCREEN,
     CONTEXT_MENU,
     RUN_FILE_CHOOSER,
+    CHOOSE_MEDIA_DEVICE,
 
     LAST_SIGNAL
 };
@@ -1173,6 +1179,50 @@ static gboolean webkit_web_view_real_script_prompt(WebKitWebView* webView, WebKi
 {
     if (!webkit_web_view_script_dialog(webView, frame, message, WEBKIT_SCRIPT_DIALOG_PROMPT, defaultValue, value))
         *value = NULL;
+    return TRUE;
+}
+
+typedef struct {
+    WebKitWebUserMediaRequest* request;
+    WebKitWebUserMediaList* audioMediaList;
+    WebKitWebUserMediaList* videoMediaList;
+    GtkMediaChooserDialog* dialog;
+} UserMediaSelectorData;
+
+static void mediaChooserResponseCallback(GtkWidget* widget, gint responseID, UserMediaSelectorData *data)
+{
+    if (responseID == GTK_RESPONSE_OK) {
+        if (data->dialog->selectedAudio() != -1)
+            webkit_web_user_media_list_select_item(data->audioMediaList, data->dialog->selectedAudio());
+
+        if (data->dialog->selectedVideo() != -1)
+            webkit_web_user_media_list_select_item(data->videoMediaList, data->dialog->selectedVideo());
+
+        webkit_web_user_media_request_allow(data->request, data->audioMediaList, data->videoMediaList);
+    } else
+        webkit_web_user_media_request_deny(data->request);
+
+    g_object_unref(data->request);
+    g_object_unref(data->audioMediaList);
+    g_object_unref(data->videoMediaList);
+    delete data->dialog;
+    g_free(data);
+}
+
+static gboolean webkit_web_view_real_choose_media_device(WebKitWebView *webView, WebKitWebUserMediaRequest* request, WebKitWebUserMediaList* audioMediaList, WebKitWebUserMediaList* videoMediaList)
+{
+    GtkWidget* toplevel = gtk_widget_get_toplevel(GTK_WIDGET(webView));
+    GtkMediaChooserDialog* dialog = new GtkMediaChooserDialog(toplevel, core(request), core(audioMediaList), core(videoMediaList));
+    GtkWidget* widget = dialog->widget();
+    UserMediaSelectorData* data = g_new(UserMediaSelectorData, 1);
+
+    data->request = (WebKitWebUserMediaRequest*) g_object_ref(request);
+    data->audioMediaList = (WebKitWebUserMediaList*) g_object_ref(audioMediaList);
+    data->videoMediaList = (WebKitWebUserMediaList*) g_object_ref(videoMediaList);
+    data->dialog = dialog;
+
+    g_signal_connect(widget, "response", G_CALLBACK(mediaChooserResponseCallback), data);
+    dialog->show();
     return TRUE;
 }
 
@@ -2727,6 +2777,32 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
             WEBKIT_TYPE_VIEWPORT_ATTRIBUTES);
 
     /**
+     * WebKitWebView::choose-media-device:
+     * @web_view: the object which received the signal
+     * @request: the #WebKitWebUserMediaRquest attribute which generated the request.
+     * @audioList: a #WebKitWebUserMediaList containing the available audio media options.
+     * @videoList: a #WebKitWebUserMediaList containing the available video media options.
+     *
+     * When the application request userMedia, this signal will be emited with the request
+     * information and the available options to be selected.
+     *
+     * Then the user is expected to call either webkit_web_user_media_request_succeed() or
+     * webkit_web_user_media_request_fail() to accept or reject the request.
+     *
+     * Since: 2.0.0
+     */
+    webkit_web_view_signals[CHOOSE_MEDIA_DEVICE] = g_signal_new("choose-media-device",
+            G_TYPE_FROM_CLASS(webViewClass),
+            G_SIGNAL_RUN_LAST,
+            G_STRUCT_OFFSET(WebKitWebViewClass, choose_media_device),
+            g_signal_accumulator_true_handled, 0,
+            webkit_marshal_BOOLEAN__OBJECT_OBJECT_OBJECT,
+            G_TYPE_BOOLEAN, 3,
+            WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST,
+            WEBKIT_TYPE_WEB_USER_MEDIA_LIST,
+            WEBKIT_TYPE_WEB_USER_MEDIA_LIST);
+
+    /**
      * WebKitWebView::entering-fullscreen:
      * @web_view: the #WebKitWebView on which the signal is emitted.
      * @element: the #WebKitDOMHTMLElement which has requested full screen display.
@@ -2915,6 +2991,7 @@ static void webkit_web_view_class_init(WebKitWebViewClass* webViewClass)
     webViewClass->script_alert = webkit_web_view_real_script_alert;
     webViewClass->script_confirm = webkit_web_view_real_script_confirm;
     webViewClass->script_prompt = webkit_web_view_real_script_prompt;
+    webViewClass->choose_media_device = webkit_web_view_real_choose_media_device;
     webViewClass->console_message = webkit_web_view_real_console_message;
     webViewClass->select_all = webkit_web_view_real_select_all;
     webViewClass->cut_clipboard = webkit_web_view_real_cut_clipboard;
@@ -3632,7 +3709,7 @@ static void webkit_web_view_init(WebKitWebView* webView)
 #endif
 
 #if ENABLE(MEDIA_STREAM)
-    priv->userMediaClient = adoptPtr(new UserMediaClientGtk);
+    priv->userMediaClient = adoptPtr(new UserMediaClientGtk(webView));
     WebCore::provideUserMediaTo(priv->corePage, priv->userMediaClient.get());
 #endif
 

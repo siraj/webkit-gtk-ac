@@ -1,3 +1,80 @@
+2012-10-18  Danilo Cesar Lemes de Paula  <danilo.cesar@collabora.co.uk>
+
+        [gtk] adding methods and signals for usermedia communication between webkit and browser
+        https://bugs.webkit.org/show_bug.cgi?id=94373
+
+        When the user makes a getUserMedia call, webview will emit a signal (user-media-requested)
+        to the application containing the request itself (webkitwebusermediarequest) and two
+        lists with the available audio and video devices (webkitwebusermedialist).
+
+        The application must show the lists to the user and ask permission to use one of
+        those devices (or reject the request).
+
+        In case the user accepts the request, the application must mark the device as
+        selected (using webkit_web_user_media_list_select_item) and then call
+        webkit_web_user_media_request_allow which will handle the request properly.
+
+        In case the user rejects the request, webkit_web_user_media_request_deny must
+        be called.
+
+        Reviewed by NOBODY (OOPS!).
+
+        * GNUmakefile.am:
+        * WebCoreSupport/UserMediaClientGtk.cpp:
+        (WebKit::UserMediaClientGtk::UserMediaClientGtk):
+        (WebKit::UserMediaClientGtk::pageDestroyed):
+        (WebKit::UserMediaClientGtk::requestUserMedia):
+        * WebCoreSupport/UserMediaClientGtk.h:
+        (WebCore):
+        (UserMediaClientGtk):
+        * docs/webkitgtk-docs.sgml:
+        * docs/webkitgtk-sections.txt:
+        * webkit/webkit.h:
+        * webkit/webkitwebusermedialist.cpp: Added.
+        (_WebKitWebUserMediaListPrivate):
+        (webkitWebUserMediaListFinalize):
+        (webkit_web_user_media_list_class_init):
+        (webkit_web_user_media_list_init):
+        (webkit_web_user_media_list_get_length):
+        (webkit_web_user_media_list_get_item_name):
+        (webkit_web_user_media_list_is_item_selected):
+        (webkit_web_user_media_list_select_item):
+        (WebKit):
+        (WebKit::core):
+        (WebKit::kitNew):
+        * webkit/webkitwebusermedialist.h: Added.
+        (_WebKitWebUserMediaList):
+        (_WebKitWebUserMediaListClass):
+        * webkit/webkitwebusermedialistprivate.h: Added.
+        (WebKit):
+        * webkit/webkitwebusermediarequest.cpp: Added.
+        (_WebKitWebUserMediaRequestPrivate):
+        (webkitWebUserMediaRequestFinalize):
+        (webkit_web_user_media_request_class_init):
+        (webkit_web_user_media_request_init):
+        (webkit_web_user_media_request_wants_audio):
+        (webkit_web_user_media_request_wants_video):
+        (webkit_web_user_media_request_get_security_origin):
+        (webkit_web_user_media_request_allow):
+        (webkit_web_user_media_request_deny):
+        (WebKit):
+        (WebKit::core):
+        (WebKit::kitNew):
+        * webkit/webkitwebusermediarequest.h: Added.
+        (_WebKitWebUserMediaRequest):
+        (_WebKitWebUserMediaRequestClass):
+        * webkit/webkitwebusermediarequestprivate.h: Added.
+        (WebCore):
+        (WebKit):
+        * webkit/webkitwebview.cpp:
+        (mediaChooserResponseCallback):
+        (webkit_web_view_real_choose_media_device):
+        (webkit_web_view_class_init):
+        (webkit_web_view_init):
+        * webkit/webkitwebview.h:
+        (_WebKitWebViewClass):
+        * webkitmarshal.list:
+
 2012-10-24  Brady Eidson  <beidson@apple.com>
 
         Add a strategy for loader customization.

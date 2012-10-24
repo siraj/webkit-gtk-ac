@@ -686,6 +686,49 @@ WebKitIconDatabasePrivate
 </SECTION>
 
 <SECTION>
+<FILE>webkitwebusermedialist</FILE>
+<TITLE>WebKitWebUserMediaList</TITLE>
+WebKitWebUserMediaList
+webkit_web_user_media_list_get_length
+webkit_web_user_media_list_get_item_name
+webkit_web_user_media_list_is_item_selected
+webkit_web_user_media_list_select_item
+<SUBSECTION Standard>
+WEBKIT_IS_WEB_USER_MEDIA_LIST
+WEBKIT_IS_WEB_USER_MEDIA_LIST_CLASS
+WEBKIT_WEB_USER_MEDIA_LIST
+WEBKIT_WEB_USER_MEDIA_LIST_CLASS
+WEBKIT_WEB_USER_MEDIA_LIST_GET_CLASS
+WEBKIT_TYPE_WEB_USER_MEDIA_LIST
+<SUBSECTION Private>
+WebKitWebUserMediaListPrivate
+WebKitWebUserMediaListClass
+webkit_web_user_media_list_get_type
+</SECTION>
+
+<SECTION>
+<FILE>webkitwebusermediarequest</FILE>
+<TITLE>WebKitWebUserMediaRequest</TITLE>
+WebKitWebUserMediaRequest
+webkit_web_user_media_request_allow
+webkit_web_user_media_request_deny
+webkit_web_user_media_request_wants_audio
+webkit_web_user_media_request_wants_video
+webkit_web_user_media_request_get_security_origin
+<SUBSECTION Standard>
+WEBKIT_IS_WEB_USER_MEDIA_REQUEST
+WEBKIT_IS_WEB_USER_MEDIA_REQUEST_CLASS
+WEBKIT_TYPE_WEB_USER_MEDIA_REQUEST
+WEBKIT_WEB_USER_MEDIA_REQUEST
+WEBKIT_WEB_USER_MEDIA_REQUEST_CLASS
+WEBKIT_WEB_USER_MEDIA_REQUEST_GET_CLASS
+<SUBSECTION Private>
+WebKitWebUserMediaRequestClass
+WebKitWebUserMediaRequestPrivate
+webkit_web_user_media_request_get_type
+</SECTION>
+
+<SECTION>
 <FILE>webkitfavicondatabase</FILE>
 <TITLE>WebKitFaviconDatabase</TITLE>
 WebKitFaviconDatabase

@@ -87,6 +87,7 @@ libwebkitgtk_@WEBKITGTK_API_MAJOR_VERSION@_@WEBKITGTK_API_MINOR_VERSION@_la_LIBA
 	$(CLUTTER_GTK_LIBS) \
 	$(COVERAGE_LDFLAGS) \
 	$(ENCHANT_LIBS) \
+	$(FARSTREAM_LIBS) \
 	$(FREETYPE_LIBS) \
 	$(GAIL_LIBS) \
 	$(GAMEPAD_LIBS) \
@@ -142,6 +143,8 @@ webkitgtk_static_h_api += \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebpolicydecision.h \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebresource.h \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebsettings.h \
+	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebusermedialist.h \
+	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebusermediarequest.h \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebwindowfeatures.h \
 	$(srcdir)/Source/WebKit/gtk/webkit/webkitwebview.h
 
@@ -276,6 +279,10 @@ webkitgtk_sources += \
 	Source/WebKit/gtk/webkit/webkitwebplugindatabaseprivate.h \
 	Source/WebKit/gtk/webkit/webkitwebsettings.cpp \
 	Source/WebKit/gtk/webkit/webkitwebsettingsprivate.h \
+	Source/WebKit/gtk/webkit/webkitwebusermedialist.cpp \
+	Source/WebKit/gtk/webkit/webkitwebusermedialistprivate.h \
+	Source/WebKit/gtk/webkit/webkitwebusermediarequest.cpp \
+	Source/WebKit/gtk/webkit/webkitwebusermediarequestprivate.h \
 	Source/WebKit/gtk/webkit/webkitwebview.cpp \
 	Source/WebKit/gtk/webkit/webkitwebviewprivate.h \
 	Source/WebKit/gtk/webkit/webkitwebwindowfeatures.cpp \

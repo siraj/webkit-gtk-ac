@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Intel Inc. All rights reserved.
+ * Copyright (C) 2012 Collabora.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Library General Public
@@ -15,40 +15,39 @@
  * along with this library; see the file COPYING.LIB.  If not, write to
  * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301, USA.
- *
  */
-#ifndef UserMediaClientGtk_h
-#define UserMediaClientGtk_h
 
-#if ENABLE(MEDIA_STREAM)
+#ifndef GtkMediaChooserDialog_h
+#define GtkMediaChooserDialog_h
 
 #include "MediaStreamSource.h"
-#include "UserMediaClient.h"
+#include "UserMediaRequest.h"
 
-typedef struct _WebKitWebView WebKitWebView;
+#include <wtf/FastAllocBase.h>
+#include <wtf/Noncopyable.h>
 
 namespace WebCore {
-class UserMediaRequest;
-}
 
-namespace WebKit {
+class GtkMediaChooserDialog {
+    WTF_MAKE_NONCOPYABLE(GtkMediaChooserDialog);
+    WTF_MAKE_FAST_ALLOCATED;
 
-class UserMediaClientGtk : public WebCore::UserMediaClient {
 public:
-    UserMediaClientGtk(WebKitWebView*);
-    virtual ~UserMediaClientGtk();
+    GtkMediaChooserDialog(GtkWidget *parent, UserMediaRequest*, const MediaStreamSourceVector&, const MediaStreamSourceVector&);
+    ~GtkMediaChooserDialog();
 
-    virtual void pageDestroyed();
-
-    virtual void requestUserMedia(WTF::PassRefPtr<WebCore::UserMediaRequest>, const WebCore::MediaStreamSourceVector&, const WebCore::MediaStreamSourceVector&);
-    virtual void cancelUserMediaRequest(WebCore::UserMediaRequest*);
+    void show();
+    int selectedAudio();
+    int selectedVideo();
+    GtkWidget* widget();
 
 private:
-    WebKitWebView* m_webView;
+
+    GtkWidget *m_dialog;
+    GtkWidget *m_audioCombo;
+    GtkWidget *m_videoCombo;
 };
 
-} // namespace WebKit
+} // namespace WebCore
 
-#endif // ENABLE(MEDIA_STREAM)
-
-#endif // UserMediaClientGtk_h
+#endif // GtkMediaChooserDialog_h

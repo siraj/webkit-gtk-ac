@@ -34,6 +34,7 @@
 #if ENABLE(MEDIA_STREAM)
 
 #include "MediaStreamCenterGStreamer.h"
+#include "MediaStreamCenterPrivateGStreamer.h"
 
 #include "IceCandidateDescriptor.h"
 #include "MediaStreamDescriptor.h"
@@ -52,6 +53,7 @@ MediaStreamCenter& MediaStreamCenter::instance()
 
 MediaStreamCenterGStreamer::MediaStreamCenterGStreamer()
 {
+    m_private = MediaStreamCenterPrivateGStreamer::create();
 }
 
 MediaStreamCenterGStreamer::~MediaStreamCenterGStreamer()
@@ -60,12 +62,12 @@ MediaStreamCenterGStreamer::~MediaStreamCenterGStreamer()
 
 void MediaStreamCenterGStreamer::queryMediaStreamSources(PassRefPtr<MediaStreamSourcesQueryClient> client)
 {
-    MediaStreamSourceVector audioSources, videoSources;
-    client->didCompleteQuery(audioSources, videoSources);
+    m_private->queryMediaStreamSources(client);
 }
 
-void MediaStreamCenterGStreamer::didSetMediaStreamTrackEnabled(MediaStreamDescriptor*, MediaStreamComponent*)
+void MediaStreamCenterGStreamer::didSetMediaStreamTrackEnabled(MediaStreamDescriptor* streamDescriptor, MediaStreamComponent* component)
 {
+    m_private->didSetMediaStreamTrackEnabled(streamDescriptor, component);
 }
 
 bool MediaStreamCenterGStreamer::didAddMediaStreamTrack(MediaStreamDescriptor*, MediaStreamComponent*)
@@ -78,8 +80,10 @@ bool MediaStreamCenterGStreamer::didRemoveMediaStreamTrack(MediaStreamDescriptor
     return false;
 }
 
-void MediaStreamCenterGStreamer::didStopLocalMediaStream(MediaStreamDescriptor*)
+void MediaStreamCenterGStreamer::didStopLocalMediaStream(MediaStreamDescriptor* streamDescriptor)
 {
+    m_private->didStopLocalMediaStream(streamDescriptor);
+    endLocalMediaStream(streamDescriptor);
 }
 
 void MediaStreamCenterGStreamer::didCreateMediaStream(MediaStreamDescriptor*)
